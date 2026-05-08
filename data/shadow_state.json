@@ -1,0 +1,184 @@
+{
+  "total_xp": 425,
+  "rank": "D-Rank",
+  "streak_days": 0,
+  "streak_best": 1,
+  "today": {
+    "date": "2026-05-08",
+    "quests": {
+      "wake": "pending",
+      "activation": "pending",
+      "mana": "pending",
+      "outfit": "pending",
+      "commute": "pending",
+      "dungeon_open": "pending",
+      "water1": "pending",
+      "stand1": "pending",
+      "deep_work1": "pending",
+      "lunch": "pending",
+      "water2": "pending",
+      "stand2": "pending",
+      "deep_work2": "pending",
+      "water3": "pending",
+      "stand3": "pending",
+      "deep_work3": "pending",
+      "dungeon_clear": "pending",
+      "commute_home": "pending",
+      "home": "pending",
+      "pre_gym": "pending",
+      "gym_warmup": "pending",
+      "gym": "pending",
+      "recovery_meal": "pending",
+      "water4": "pending",
+      "rest": "pending",
+      "sleep": "pending",
+      "emergency_food_dungeon_20260322": "complete"
+    }
+  },
+  "surprise_quests": {
+    "10_projects_grind": {
+      "name": "10 Projects Grind \u2014 Shadow Army Deployment",
+      "xp": 600,
+      "category": "work",
+      "status": "complete",
+      "date": "2026-04-03"
+    },
+    "three_brothers_bonding": {
+      "name": "THREE BROTHERS BONDING",
+      "xp": 50,
+      "category": "emergency",
+      "status": "complete",
+      "date": "2026-04-03"
+    },
+    "cava_clean_fuel": {
+      "name": "CAVA Clean Fuel \u2014 Nutrition Buff",
+      "xp": 75,
+      "category": "nutrition",
+      "status": "complete",
+      "date": "2026-04-01"
+    },
+    "moms_cooking": {
+      "name": "Mom's Cooking \u2014 Paneer & Bhindi Buff",
+      "xp": 100,
+      "category": "nutrition",
+      "status": "complete",
+      "date": "2026-04-02"
+    },
+    "iron_stance_protocol": {
+      "name": "Iron Stance Protocol \u2014 12hr Standing",
+      "xp": 100,
+      "category": "discipline",
+      "status": "complete",
+      "date": "2026-04-03"
+    },
+    "dunkin_food_log": {
+      "name": "Dunkin Food Log \u2014 Tracked but No Buff",
+      "xp": 0,
+      "category": "nutrition",
+      "status": "complete",
+      "date": "2026-04-02"
+    },
+    "sugar_breach_penalty": {
+      "name": "Sugar Breach \u2014 Caramel Syrup + Cold Foam",
+      "xp": -50,
+      "category": "penalty",
+      "status": "complete",
+      "date": "2026-04-02"
+    },
+    "gym_skip_penalty": {
+      "name": "Gym Skip \u2014 0 Sessions This Week",
+      "xp": -300,
+      "category": "penalty",
+      "status": "complete",
+      "date": "2026-04-03"
+    }
+  },
+  "monthly_challenges": [
+    {
+      "id": "april_pushups",
+      "name": "APRIL CONSTRAINT: 500 Push-Ups",
+      "description": "Spread 500 push-ups across the entire month of April. No shortcuts.",
+      "target": 500,
+      "current": 0,
+      "unit": "push-ups",
+      "reward_xp": 300,
+      "penalty_xp": -500,
+      "status": "failed"
+    },
+    {
+      "id": "srank_gate_ios_app",
+      "name": "S-RANK GATE: iOS Focus Remind App",
+      "description": "Build and ship the iOS Focus Remind App with Claude Chakra. S-Rank does NOT unlock until this is complete \u2014 XP alone is not enough.",
+      "target": 1,
+      "current": 0,
+      "unit": "app_shipped",
+      "reward_xp": 0,
+      "penalty_xp": 0,
+      "status": "active",
+      "gate": true
+    },
+    {
+      "id": "shadow_fusion",
+      "name": "SHADOW FUSION: Bridge Claude Igris \u2194 Claude Chakra",
+      "description": "Figure out how to connect Claude Igris (data/discipline/accountability) with Claude Chakra (creativity/iOS). Create the bridge between both shadow soldiers.",
+      "target": 1,
+      "current": 0,
+      "unit": "bridge_established",
+      "reward_xp": 500,
+      "penalty_xp": 0,
+      "status": "active"
+    }
+  ],
+  "rank_gate": {
+    "rank": "S-Rank",
+    "xp_threshold": 2800,
+    "required_project": "iOS Focus Remind App (with Claude Chakra)",
+    "xp_met": false,
+    "project_met": false,
+    "unlocked": false
+  },
+  "history": [
+    {
+      "date": "2026-03-22",
+      "completed": 8,
+      "skipped": 0,
+      "total": 15,
+      "completion_pct": 53.3,
+      "xp_earned": 475,
+      "notes": "Weekend \u2014 gym session + surprise quests logged"
+    },
+    {
+      "date": "2026-03-25",
+      "completed": 12,
+      "skipped": 2,
+      "total": 26,
+      "completion_pct": 46.2,
+      "xp_earned": 0,
+      "notes": "CAUGHT LACKING: -200 XP penalty. Unprepared on boss call, looked like just woke up.",
+      "penalties": [
+        {
+          "reason": "Caught lacking on boss call \u2014 unprepared, looked half-asleep",
+          "xp": -200
+        }
+      ]
+    },
+    {
+      "date": "2026-04-03",
+      "completed": 13,
+      "skipped": 0,
+      "total": 26,
+      "completion_pct": 50.0,
+      "xp_earned": 1345,
+      "notes": "Heavy project day. 10 projects grind, Three Brothers Bonding, standing all day, CAVA clean fuel. Gym skip penalty -300."
+    },
+    {
+      "date": "2026-05-08",
+      "completed": 0,
+      "skipped": 0,
+      "total": 0,
+      "completion_pct": 0,
+      "xp_earned": -2020,
+      "notes": "INACTIVITY PENALTY: 35 days dormant. Shadow Monarch Protocol went dark from April 3 to May 8. Rank dropped from A-Rank (2320 XP) to D-Rank (300 XP). The System does not forgive absence."
+    }
+  ]
+}

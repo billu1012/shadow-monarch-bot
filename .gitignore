@@ -1,0 +1,32 @@
+# Secrets
+.env
+
+# Node
+node_modules/
+dist/
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Logs
+bot_log*.txt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Server
+server/
+
+# React source (not needed for bot)
+src/
+public/
+eslint.config.js
+index.html
+vite.config.js
+package.json
+package-lock.json
+IMESSAGE_SETUP.txt
+requirements_discord.txt

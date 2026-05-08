@@ -1,0 +1,71 @@
+{
+  "project": "Shadow Monarch Protocol",
+  "owner": "Prat",
+  "current_rank": "D-Rank",
+  "current_xp": 300,
+  "target_gate": "S-Rank",
+  "s_rank_locked": true,
+  "s_rank_unlock_condition": "Ship the iOS Focus Remind App MVP in Swift/SwiftUI. XP alone cannot unlock S-Rank.",
+  "active_sprint": {
+    "name": "S-Rank Ecosystem Foundation",
+    "status": "in_progress",
+    "started": "2026-05-08",
+    "objective": "Deploy Discord bot to Render, create agent bridge system, scaffold iOS Focus Remind App, define Shadow Command Center dashboard."
+  },
+  "agents": {
+    "igris": {
+      "platform": "Claude/Anthropic",
+      "role": "engineering implementation, debugging, refactoring, test execution, deployment",
+      "status": "active",
+      "last_update": "2026-05-08"
+    },
+    "chakra": {
+      "platform": "ChatGPT",
+      "role": "strategy, UX, gamification, growth system, handoff design, creative direction",
+      "status": "active",
+      "last_update": "2026-05-08"
+    },
+    "beru": {
+      "platform": "Google Gemini",
+      "role": "research, market intelligence, content scouting, workflow optimization",
+      "status": "active",
+      "last_update": "2026-05-08"
+    },
+    "codex": {
+      "platform": "OpenAI Codex",
+      "role": "repo implementation, branch creation, code edits, automated handoff file updates",
+      "status": "pending",
+      "last_update": "2026-05-08"
+    }
+  },
+  "questlines": {
+    "ios_focus_app": { "status": "not_started", "priority": 1 },
+    "discord_deployment": { "status": "in_progress", "priority": 2 },
+    "agent_bridge": { "status": "completed", "priority": 3 },
+    "command_center": { "status": "planned", "priority": 4 }
+  },
+  "mvp_features": [
+    "Create focus quest",
+    "Schedule local notification",
+    "Start focus session timer",
+    "Complete focus session",
+    "Award XP locally",
+    "Track streak locally",
+    "Show S-Rank Gate screen"
+  ],
+  "do_not_build_yet": [
+    "Cloud sync",
+    "Discord bot integration with iOS",
+    "React dashboard integration",
+    "Authentication",
+    "Payments",
+    "Complex analytics"
+  ],
+  "latest_handoff": {
+    "from": "Igris",
+    "to": "Chakra",
+    "mission": "Agent bridge files created. Awaiting Chakra's expansion plan and Codex task deployment.",
+    "status": "in_progress",
+    "date": "2026-05-08"
+  }
+}

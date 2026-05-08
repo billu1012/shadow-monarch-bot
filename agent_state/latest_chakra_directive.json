@@ -1,0 +1,29 @@
+{
+  "from": "Chakra",
+  "platform": "ChatGPT",
+  "date": "2026-05-08",
+  "directive": "Build the S-Rank Ecosystem Foundation",
+  "sprint_questlines": [
+    "iOS Focus Remind App MVP (S-Rank Gate)",
+    "Discord Bot Deployment + Stability",
+    "Agent Bridge System",
+    "Shadow Command Center Dashboard"
+  ],
+  "task_for_igris": "Deploy Discord bot to Render. Create agent bridge files. Review Codex iOS scaffold when ready. Implement Gemini's workflow optimizations.",
+  "task_for_codex": "Create iOS Focus Remind App MVP scaffold with SwiftUI under ios/FocusRemindApp/. Include Models, Stores, Views, local persistence, UserNotifications, S-Rank Gate screen.",
+  "acceptance_criteria": [
+    "Discord bot running 24/7 on Render",
+    "Agent bridge files committed to repo",
+    "iOS app scaffold compiles in Xcode",
+    "S-Rank Gate visible in-app and in docs",
+    "System-style commit messages adopted"
+  ],
+  "do_not_build_yet": [
+    "Cloud sync",
+    "Authentication",
+    "Payments",
+    "Discord-iOS integration"
+  ],
+  "codex_prompt_status": "ready — full Codex prompt generated and available in ChatGPT conversation",
+  "status": "active"
+}
