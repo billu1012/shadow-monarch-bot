@@ -30,3 +30,13 @@ package.json
 package-lock.json
 IMESSAGE_SETUP.txt
 requirements_discord.txt
+
+# Life OS private seed and preserved local nested checkout
+lifeos/profile/
+j/
+!package.json
+!package-lock.json
+!lifeos/index.html
+
+# Windows-reserved legacy file preserved under docs/legacy-j
+/nul

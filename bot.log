@@ -1,0 +1,46 @@
+12:00:24  [WARNING]  PyNaCl is not installed, voice will NOT be supported
+12:00:24  [WARNING]  davey is not installed, voice will NOT be supported
+12:00:24  [INFO]  Starting Shadow Monarch Protocol...
+12:00:24  [INFO]  logging in using static token
+12:00:25  [INFO]  Slash commands synced. Scheduler started.
+12:00:25  [INFO]  Shard ID None has connected to Gateway (Session ID: 88e4a352be92280806e2c12d61c0c4cf).
+12:00:27  [INFO]  SYSTEM online  ·  SYSTEM#1236  (ID: 1485183725644808202)
+12:00:27  [INFO]  Quest channel : 1485162642665377886
+14:15:49  [INFO]  Shard ID None has successfully RESUMED session e216c5d14:20:57  [INFO]  Shard ID N17:10:08  [INFO]  Shard ID None has successfully RESUMED session 5fda2a71b1f553547b51b481ef555d82.
+18:44:13  [ERROR]  Ignoring exception in command 'quests'
+Traceback (most recent call last):
+ 18:44:13  [WARNING]  Webhook ID 1485408785601138949 is rate limited. Retrying in 0.30 seconds.
+18:44:13  [ERROR]  Ignoring exception in command 'quests'
+Traceback (most recent call last):
+  File "C:\Users\Prat\AppData\Roaming\Python\Python313\site-packages\discord\app_commands\commands.py", line 859, in _do_call
+    return await self._callback(interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Prat\PycharmProjects\PythonProject\sololevelingproject\shadow_monarch_bot.py", line 1354, in cmd_quests
+    )
+  File "C:\Users\Prat\AppData\Roaming\Python\Python313\site-packages\discord\interactions.py", line 892, in defer
+    response = await adapter.create_interaction_response(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "C:\Users\Prat\AppData\Roaming\Python\Python313\site-packages\discord\webhook\async_.py", line 226, in request
+    raise HTTPException(response, data)
+discord.errors.HTTPException: 400 Bad Request (error code: 40060): Interaction has already been acknowledged.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\Prat\AppData\Roaming\Python\Python313\site-packages\discord\app_commands\tree.py", line 1302, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\Prat\AppData\Roaming\Python\Python313\site-packages\discord\app_commands\commands.py", line 884, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Prat\AppData\Roaming\Python\Python313\site-packages\discord\app_commands\commands.py", line 877, in _do_call
+    raise CommandInvokeError(self, e) from e
+discor19:36:26  [INFO]  Shard ID None has successfully RESUMED session e216c5d851040583744d0e5abf757a3d.
+20:50:13  [INFO]  Shard ID None has successfully RESUMED session e216c5d851040583744d0e5abf757a3d.
+21:27:14  [INFO]  Shard ID None has successfully RESUMED session e216c5d851022:18:31  [INFO]  Shard 00:19:28  [INFO]  Shard ID None has successfully RESUMED session e216c5d851040583744d0e5abf757a3d.
+2280806e2c12d61c0c4cf.
+00:17:02  [INFO]  Shard ID None has successfully RESUMED session 88e4a352be92280806e2c12d61c0c4cf.
+iscord.app_commands.errors.CommandInvokeError: Command 'quests' raised an exception: NotFound: 404 Not Found (error code: 10062): Unknown interaction
+20:48:35  [INFO]  Shard ID None has successfully RESUMED session 810ec12b2ff055636368b0cc1d90a5df.

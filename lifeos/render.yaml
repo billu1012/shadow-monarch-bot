@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: prat-life-os
+    runtime: static
+    staticPublishPath: lifeos
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

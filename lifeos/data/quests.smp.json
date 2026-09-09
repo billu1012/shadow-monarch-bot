@@ -1,0 +1,184 @@
+[
+  {
+    "id": "wake",
+    "name": "SYSTEM BOOT",
+    "category": "Discipline",
+    "time": "06:00",
+    "xp": 50
+  },
+  {
+    "id": "activation",
+    "name": "BODY ACTIVATION",
+    "category": "Fitness",
+    "time": "06:10",
+    "xp": 75
+  },
+  {
+    "id": "mana",
+    "name": "MANA CHARGE",
+    "category": "Nutrition",
+    "time": "06:30",
+    "xp": 25
+  },
+  {
+    "id": "outfit",
+    "name": "ARMOR EQUIP",
+    "category": "Discipline",
+    "time": "06:45",
+    "xp": 25
+  },
+  {
+    "id": "commute",
+    "name": "GATE TRANSIT",
+    "category": "Focus",
+    "time": "07:00",
+    "xp": 30
+  },
+  {
+    "id": "dungeon_open",
+    "name": "DUNGEON OPEN",
+    "category": "Discipline",
+    "time": "07:30",
+    "xp": 100
+  },
+  {
+    "id": "water1",
+    "name": "WATER RAID I",
+    "category": "Nutrition",
+    "time": "10:00",
+    "xp": 50
+  },
+  {
+    "id": "stand1",
+    "name": "STAND BREAK I",
+    "category": "Fitness",
+    "time": "10:30",
+    "xp": 30
+  },
+  {
+    "id": "deep_work1",
+    "name": "EXTRACTION I",
+    "category": "Focus",
+    "time": "11:00",
+    "xp": 100
+  },
+  {
+    "id": "lunch",
+    "name": "MAIN QUEST MEAL",
+    "category": "Nutrition",
+    "time": "12:00",
+    "xp": 75
+  },
+  {
+    "id": "water2",
+    "name": "WATER RAID II",
+    "category": "Nutrition",
+    "time": "13:00",
+    "xp": 50
+  },
+  {
+    "id": "stand2",
+    "name": "STAND BREAK II",
+    "category": "Fitness",
+    "time": "13:30",
+    "xp": 30
+  },
+  {
+    "id": "deep_work2",
+    "name": "EXTRACTION II",
+    "category": "Focus",
+    "time": "14:00",
+    "xp": 100
+  },
+  {
+    "id": "water3",
+    "name": "WATER RAID III",
+    "category": "Nutrition",
+    "time": "15:00",
+    "xp": 50
+  },
+  {
+    "id": "stand3",
+    "name": "STAND BREAK III",
+    "category": "Fitness",
+    "time": "15:30",
+    "xp": 30
+  },
+  {
+    "id": "deep_work3",
+    "name": "EXTRACTION III",
+    "category": "Focus",
+    "time": "16:00",
+    "xp": 100
+  },
+  {
+    "id": "dungeon_clear",
+    "name": "DUNGEON CLEAR",
+    "category": "Discipline",
+    "time": "17:00",
+    "xp": 75
+  },
+  {
+    "id": "commute_home",
+    "name": "RETURN GATE",
+    "category": "Discipline",
+    "time": "17:30",
+    "xp": 30
+  },
+  {
+    "id": "home",
+    "name": "RESPAWN POINT",
+    "category": "Discipline",
+    "time": "18:00",
+    "xp": 25
+  },
+  {
+    "id": "pre_gym",
+    "name": "BOSS PREP",
+    "category": "Nutrition",
+    "time": "19:00",
+    "xp": 25
+  },
+  {
+    "id": "gym_warmup",
+    "name": "SHADOW WARMUP",
+    "category": "Fitness",
+    "time": "19:45",
+    "xp": 50
+  },
+  {
+    "id": "gym",
+    "name": "SHADOW RAID",
+    "category": "Fitness",
+    "time": "20:00",
+    "xp": 200
+  },
+  {
+    "id": "recovery_meal",
+    "name": "RECOVERY RATIONS",
+    "category": "Nutrition",
+    "time": "21:15",
+    "xp": 75
+  },
+  {
+    "id": "water4",
+    "name": "WATER RAID IV",
+    "category": "Nutrition",
+    "time": "21:30",
+    "xp": 50
+  },
+  {
+    "id": "rest",
+    "name": "REST PHASE",
+    "category": "Discipline",
+    "time": "22:00",
+    "xp": 30
+  },
+  {
+    "id": "sleep",
+    "name": "SHADOW SLEEP",
+    "category": "Discipline",
+    "time": "23:00",
+    "xp": 200
+  }
+]

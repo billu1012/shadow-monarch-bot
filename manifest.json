@@ -1,0 +1,9 @@
+{
+  "name": "Shadow Monarch OS",
+  "short_name": "ShadowOS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a14",
+  "theme_color": "#7c3aed",
+  "icons": []
+}

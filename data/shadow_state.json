@@ -1,7 +1,7 @@
 {
-  "total_xp": 425,
+  "total_xp": 550,
   "rank": "D-Rank",
-  "streak_days": 0,
+  "streak_days": 1,
   "streak_best": 1,
   "today": {
     "date": "2026-05-08",
@@ -37,7 +37,7 @@
   },
   "surprise_quests": {
     "10_projects_grind": {
-      "name": "10 Projects Grind \u2014 Shadow Army Deployment",
+      "name": "10 Projects Grind — Shadow Army Deployment",
       "xp": 600,
       "category": "work",
       "status": "complete",
@@ -51,46 +51,102 @@
       "date": "2026-04-03"
     },
     "cava_clean_fuel": {
-      "name": "CAVA Clean Fuel \u2014 Nutrition Buff",
+      "name": "CAVA Clean Fuel — Nutrition Buff",
       "xp": 75,
       "category": "nutrition",
       "status": "complete",
       "date": "2026-04-01"
     },
     "moms_cooking": {
-      "name": "Mom's Cooking \u2014 Paneer & Bhindi Buff",
+      "name": "Mom's Cooking — Paneer & Bhindi Buff",
       "xp": 100,
       "category": "nutrition",
       "status": "complete",
       "date": "2026-04-02"
     },
     "iron_stance_protocol": {
-      "name": "Iron Stance Protocol \u2014 12hr Standing",
+      "name": "Iron Stance Protocol — 12hr Standing",
       "xp": 100,
       "category": "discipline",
       "status": "complete",
       "date": "2026-04-03"
     },
     "dunkin_food_log": {
-      "name": "Dunkin Food Log \u2014 Tracked but No Buff",
+      "name": "Dunkin Food Log — Tracked but No Buff",
       "xp": 0,
       "category": "nutrition",
       "status": "complete",
       "date": "2026-04-02"
     },
     "sugar_breach_penalty": {
-      "name": "Sugar Breach \u2014 Caramel Syrup + Cold Foam",
+      "name": "Sugar Breach — Caramel Syrup + Cold Foam",
       "xp": -50,
       "category": "penalty",
       "status": "complete",
       "date": "2026-04-02"
     },
     "gym_skip_penalty": {
-      "name": "Gym Skip \u2014 0 Sessions This Week",
+      "name": "Gym Skip — 0 Sessions This Week",
       "xp": -300,
       "category": "penalty",
       "status": "complete",
       "date": "2026-04-03"
+    },
+    "shadow_body_day4_gym": {
+      "name": "Shadow Body Day 4 — Heavy Arms + Back + Chest",
+      "xp": 50,
+      "category": "training",
+      "status": "complete",
+      "date": "2026-05-07"
+    },
+    "shadow_body_day4_azm": {
+      "name": "Active Zone Minutes — 85 AZM Banked",
+      "xp": 25,
+      "category": "training",
+      "status": "complete",
+      "date": "2026-05-07"
+    },
+    "shadow_body_day4_steps": {
+      "name": "Step Count — 8,100 Steps Logged",
+      "xp": 15,
+      "category": "movement",
+      "status": "complete",
+      "date": "2026-05-07"
+    },
+    "shadow_body_day4_walk_mom": {
+      "name": "Recovery Walk with Mom — Family + Movement Buff",
+      "xp": 15,
+      "category": "recovery",
+      "status": "complete",
+      "date": "2026-05-07"
+    },
+    "shadow_body_day4_sauna": {
+      "name": "Sauna Recovery — 20 Min Session",
+      "xp": 10,
+      "category": "recovery",
+      "status": "complete",
+      "date": "2026-05-07"
+    },
+    "shadow_body_day4_tracking": {
+      "name": "Full Meal Tracking — All 5 Meals Logged",
+      "xp": 15,
+      "category": "nutrition",
+      "status": "complete",
+      "date": "2026-05-07"
+    },
+    "shadow_body_day4_protein_miss": {
+      "name": "Protein Floor Miss — 102g vs 150g Target",
+      "xp": -25,
+      "category": "penalty",
+      "status": "complete",
+      "date": "2026-05-07"
+    },
+    "shadow_body_day4_grade": {
+      "name": "Daily Grade B- — Solid Effort, Room to Grow",
+      "xp": 20,
+      "category": "discipline",
+      "status": "complete",
+      "date": "2026-05-07"
     }
   },
   "monthly_challenges": [
@@ -108,7 +164,7 @@
     {
       "id": "srank_gate_ios_app",
       "name": "S-RANK GATE: iOS Focus Remind App",
-      "description": "Build and ship the iOS Focus Remind App with Claude Chakra. S-Rank does NOT unlock until this is complete \u2014 XP alone is not enough.",
+      "description": "Build and ship the iOS Focus Remind App with Claude Chakra. S-Rank does NOT unlock until this is complete — XP alone is not enough.",
       "target": 1,
       "current": 0,
       "unit": "app_shipped",
@@ -119,11 +175,22 @@
     },
     {
       "id": "shadow_fusion",
-      "name": "SHADOW FUSION: Bridge Claude Igris \u2194 Claude Chakra",
+      "name": "SHADOW FUSION: Bridge Claude Igris ↔ Claude Chakra",
       "description": "Figure out how to connect Claude Igris (data/discipline/accountability) with Claude Chakra (creativity/iOS). Create the bridge between both shadow soldiers.",
       "target": 1,
-      "current": 0,
+      "current": 1,
       "unit": "bridge_established",
+      "reward_xp": 500,
+      "penalty_xp": 0,
+      "status": "complete"
+    },
+    {
+      "id": "shadow_body_protocol",
+      "name": "SHADOW BODY PROTOCOL: V-Taper Campaign",
+      "description": "Daily fitness tracking via Gmail drafts. Log intake, burn, protein, steps, training. Hit 150g protein floor. 4-day rolling average matters.",
+      "target": 30,
+      "current": 4,
+      "unit": "days_logged",
       "reward_xp": 500,
       "penalty_xp": 0,
       "status": "active"
@@ -145,7 +212,7 @@
       "total": 15,
       "completion_pct": 53.3,
       "xp_earned": 475,
-      "notes": "Weekend \u2014 gym session + surprise quests logged"
+      "notes": "Weekend — gym session + surprise quests logged"
     },
     {
       "date": "2026-03-25",
@@ -157,7 +224,7 @@
       "notes": "CAUGHT LACKING: -200 XP penalty. Unprepared on boss call, looked like just woke up.",
       "penalties": [
         {
-          "reason": "Caught lacking on boss call \u2014 unprepared, looked half-asleep",
+          "reason": "Caught lacking on boss call — unprepared, looked half-asleep",
           "xp": -200
         }
       ]
@@ -172,13 +239,54 @@
       "notes": "Heavy project day. 10 projects grind, Three Brothers Bonding, standing all day, CAVA clean fuel. Gym skip penalty -300."
     },
     {
+      "date": "2026-05-07",
+      "completed": 7,
+      "skipped": 0,
+      "total": 8,
+      "completion_pct": 87.5,
+      "xp_earned": 125,
+      "notes": "Shadow Body Protocol Day 4 — Heavy arms + back + chest, 85 AZM, 8100 steps, recovery walk with mom, sauna. B- grade. Protein missed floor (102g vs 150g).",
+      "body_protocol": {
+        "day": 4,
+        "grade": "B-",
+        "intake_cal": 1470,
+        "burn_cal": 3084,
+        "protein_g": 102,
+        "protein_target_g": 150,
+        "steps": 8100,
+        "net_deficit_cal": -1614,
+        "training": "Heavy arms + back + chest",
+        "active_zone_min": 85,
+        "sauna": true
+      }
+    },
+    {
       "date": "2026-05-08",
       "completed": 0,
       "skipped": 0,
       "total": 0,
       "completion_pct": 0,
-      "xp_earned": -2020,
-      "notes": "INACTIVITY PENALTY: 35 days dormant. Shadow Monarch Protocol went dark from April 3 to May 8. Rank dropped from A-Rank (2320 XP) to D-Rank (300 XP). The System does not forgive absence."
+      "xp_earned": 0,
+      "notes": "Agent bridge system built. Discord bot prepped for Render deploy. GitHub push in progress."
     }
-  ]
+  ],
+  "shadow_body_protocol": {
+    "campaign": "V-Taper",
+    "start_date": "2026-05-04",
+    "days_logged": 4,
+    "rolling_avg": {
+      "intake_cal": 1809,
+      "burn_cal": 2801,
+      "protein_g": 112,
+      "deficit_cal": -992
+    },
+    "theoretical_fat_loss_lbs": 1.13,
+    "bottleneck": "Protein density — avg 112g vs 150g floor. Fix this one variable and the V-taper accelerates.",
+    "daily_logs": [
+      {"day": 1, "date": "2026-05-04", "grade": "C", "intake": 1420, "burn": 2500, "protein": 63, "steps": null},
+      {"day": 2, "date": "2026-05-05", "grade": "A-", "intake": 1995, "burn": 3221, "protein": 142, "steps": null},
+      {"day": 3, "date": "2026-05-06", "grade": "B+", "intake": 2350, "burn": 2400, "protein": 139, "steps": null},
+      {"day": 4, "date": "2026-05-07", "grade": "B-", "intake": 1470, "burn": 3084, "protein": 102, "steps": 8100}
+    ]
+  }
 }

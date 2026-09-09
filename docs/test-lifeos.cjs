@@ -1,0 +1,30 @@
+// State-handler regression checks. Browser layout is checked separately.
+const fs=require('fs'),vm=require('vm'),assert=require('assert/strict'),path=require('path');
+const root=path.resolve(__dirname,'..');
+const html=fs.readFileSync(path.join(root,'lifeos/index.html'),'utf8');
+const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/boot\(\)\.catch\([\s\S]*$/, '');
+const nodes=new Map(),storage=new Map();let exported;
+const node=()=>({classList:{add(){},remove(){},toggle(){}},click(){},remove(){},value:'',querySelectorAll:()=>[]});
+const document={querySelector:s=>{if(!nodes.has(s))nodes.set(s,node());return nodes.get(s)},querySelectorAll:()=>[],addEventListener(){},createElement:node,body:{appendChild(){}}};
+const context=vm.createContext({document,localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},console,Date,Blob,URL:{createObjectURL:b=>{exported=b;return 'blob:test'},revokeObjectURL(){}},setTimeout:()=>0,clearTimeout(){},confirm:()=>true,window:{scrollTo(){}},seed:JSON.parse(fs.readFileSync(path.join(root,'lifeos/profile/prat.json')))});
+vm.runInContext(script,context);
+vm.runInContext("render=()=>{};go=()=>{};PRAT_SEED=seed;mode='template';S=summon({name:'TEST',season:'Launch',outcomes:['Ship demo']});save();toggle(S.quests[0]);",context);
+const original=vm.runInContext('JSON.stringify(S)',context);
+vm.runInContext("$('#btn-export').onclick()",context);
+(async()=>{
+ const payload=await exported.text();assert.deepEqual(JSON.parse(payload),JSON.parse(original));
+ vm.runInContext("$('#btn-reset').onclick()",context);assert.equal(vm.runInContext('S',context),null);
+ context.file={text:async()=>payload};
+ vm.runInContext("jsonTarget='profile';$('#file-json').onchange({target:{files:[file]}})",context);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.deepEqual(JSON.parse(vm.runInContext('JSON.stringify(S)',context)),JSON.parse(original));
+ vm.runInContext('S=null;load()',context);
+ assert.deepEqual(JSON.parse(vm.runInContext('JSON.stringify(S)',context)),JSON.parse(original));
+ vm.runInContext("mode='prat';load()",context);assert.equal(vm.runInContext('S.xp',context),6850);
+ const order=vm.runInContext('brief().order',context);vm.runInContext('toggle(S.quests[0])',context);assert.notEqual(vm.runInContext('brief().order',context),order);
+ const quests=JSON.parse(fs.readFileSync(path.join(root,'lifeos/data/quests.smp.json')));
+ const source=fs.readFileSync(path.join(root,'App.jsx'),'utf8');
+ const legacy=vm.runInNewContext(source.match(/const QUESTS = (\[[\s\S]*?\n\]);/)[1]);
+ assert.equal(quests.length,26);quests.forEach((q,i)=>{assert.equal(q.name,legacy[i].label);assert.equal(q.time,legacy[i].time);assert.equal(q.xp,legacy[i].xp)});
+ console.log('PASS: export/reset/import, saved reload, mode isolation, next-open-main order, 26 verbatim quests.');
+})().catch(e=>{console.error(e);process.exitCode=1});

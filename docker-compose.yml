@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  shadow-monarch:
+    build: .
+    container_name: shadow-monarch
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+      - ./agent_state:/app/agent_state
+    environment:
+      - API_PORT=8080

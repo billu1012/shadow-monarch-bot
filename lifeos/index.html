@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080808">
+<title>PRAT LIFE OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap">
+<style>
+:root{
+  --plane:#080808;--s1:#111114;--s2:#18181d;--s3:#202027;
+  --text:#ffffff;--text2:#c9c9d0;--muted:#8a8a94;
+  --border:rgba(255,255,255,.10);--border2:rgba(255,255,255,.18);
+  --violet:#8b5cf6;--violet2:#a78bfa;--violet-dim:rgba(139,92,246,.18);
+  --gold:#d4a72c;--gold-dim:rgba(212,167,44,.16);
+  --good:#22c55e;--warn:#fab219;--crit:#e5484d;
+  --display:"Rajdhani",system-ui,sans-serif;--font:system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--plane);color:var(--text);font:400 17px/1.6 var(--font)}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:inherit}
+.hidden{display:none!important}
+/* shell */
+.shell{max-width:1180px;margin:0 auto;padding:16px 20px 96px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 0 16px;border-bottom:1px solid var(--border)}
+.brand{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:.12em;line-height:1}
+.brand small{display:block;font-size:12px;letter-spacing:.22em;color:var(--violet2);font-weight:600;margin-top:4px}
+.mode{display:flex;gap:6px;background:var(--s1);border:1px solid var(--border);border-radius:999px;padding:4px}
+.mode button{background:transparent;border:0;border-radius:999px;padding:6px 14px;font-family:var(--display);font-weight:600;letter-spacing:.08em;font-size:14px;color:var(--muted);cursor:pointer}
+.mode button.on{background:var(--violet-dim);color:#fff;border:1px solid rgba(139,92,246,.5)}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(8,8,8,.92);backdrop-filter:blur(10px);border-top:1px solid var(--border);display:flex;justify-content:center;gap:2px;padding:6px 8px calc(6px + env(safe-area-inset-bottom));overflow-x:auto}
+nav.tabs button{background:transparent;border:0;color:var(--muted);font-family:var(--display);font-weight:600;letter-spacing:.08em;font-size:13px;padding:8px 12px;border-radius:8px;cursor:pointer;white-space:nowrap}
+nav.tabs button.on{color:#fff;background:var(--s2);box-shadow:inset 0 -2px 0 var(--violet)}
+section.screen{display:none;padding-top:20px}
+section.screen.on{display:block}
+h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.06em;margin:0 0 4px;line-height:1.1}
+h2{font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:.06em;margin:0 0 10px}
+h3{font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:.04em;margin:0}
+.label{font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.label.v{color:var(--violet2)} .label.g{color:var(--gold)}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:20px}
+.card.v{border-color:rgba(139,92,246,.45)} .card.g{border-color:rgba(212,167,44,.5)}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.sp{justify-content:space-between}
+.btn{background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:8px 14px;cursor:pointer;font-family:var(--display);font-weight:600;letter-spacing:.06em;font-size:15px}
+.btn:hover{background:var(--s3)} .btn.v{background:var(--violet-dim);border-color:rgba(139,92,246,.6)} .btn.g{background:var(--gold-dim);border-color:rgba(212,167,44,.6)} .btn.sm{padding:4px 10px;font-size:13px}
+.btn:focus-visible,nav button:focus-visible,.mode button:focus-visible{outline:2px solid var(--violet2);outline-offset:2px}
+.num{font-family:var(--display);font-weight:700;font-variant-numeric:tabular-nums}
+.bar{height:10px;background:var(--s3);border-radius:5px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--violet),var(--violet2));border-radius:5px;transition:width .4s}
+.bar.gold i{background:linear-gradient(90deg,#9a7a1c,var(--gold))}
+.muted{color:var(--muted)} .t2{color:var(--text2)} .small{font-size:15px}
+.chip{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:2px 8px;border-radius:4px;border:1px solid var(--border2);color:var(--text2)}
+.chip.v{border-color:rgba(139,92,246,.6);color:#fff;background:var(--violet-dim)} .chip.g{border-color:rgba(212,167,44,.6);color:#fff;background:var(--gold-dim)}
+.chip.ok{border-color:rgba(34,197,94,.6)} .chip.warn{border-color:rgba(250,178,25,.6)} .chip.crit{border-color:rgba(229,72,77,.6)}
+input[type=text],input[type=number],textarea,select{width:100%;background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;color:#fff}
+textarea{min-height:90px;resize:vertical}
+.toast{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);background:var(--s3);border:1px solid rgba(139,92,246,.6);border-radius:10px;padding:10px 18px;font-family:var(--display);font-weight:600;letter-spacing:.08em;z-index:50;box-shadow:0 10px 40px rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:opacity .25s}
+.toast.on{opacity:1}
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(260px,420px) 1fr;gap:20px;align-items:stretch}
+.portrait{position:relative;background:radial-gradient(ellipse at 50% 30%,rgba(139,92,246,.28),transparent 60%),var(--s1);border:1px solid rgba(139,92,246,.45);border-radius:18px;min-height:420px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.portrait img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.portrait .cap{position:absolute;left:0;right:0;bottom:0;padding:14px 16px;background:linear-gradient(transparent,rgba(8,8,8,.92));font-family:var(--display)}
+.portrait .cap b{display:block;font-size:22px;letter-spacing:.14em}
+.slot{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:24px}
+.sigil{width:120px;height:120px;border-radius:50%;border:2px solid rgba(139,92,246,.7);box-shadow:0 0 40px rgba(139,92,246,.35),inset 0 0 30px rgba(139,92,246,.25);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:44px;font-weight:700;letter-spacing:.1em;color:var(--violet2)}
+.stack{display:flex;flex-direction:column;gap:12px}
+.mainq{background:linear-gradient(135deg,rgba(139,92,246,.16),rgba(212,167,44,.08)),var(--s1);border:1px solid rgba(139,92,246,.5);border-radius:14px;padding:22px}
+.mainq h2{font-size:30px;letter-spacing:.1em;margin:4px 0}
+.orders{border-left:3px solid var(--gold);padding:10px 14px;background:var(--gold-dim);border-radius:0 10px 10px 0}
+.xpline{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+.xpline .big{font-size:40px;line-height:1}
+/* quests */
+.q{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--s1)}
+.q.done{opacity:.55} .q.done .qn{text-decoration:line-through}
+.q .cb{width:22px;height:22px;border-radius:6px;border:2px solid var(--violet2);background:transparent;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center;font-size:14px}
+.q.done .cb{background:var(--violet);border-color:var(--violet)}
+.q .qn{font-weight:600;flex:1;min-width:0}
+.q .qm{font-size:13px;color:var(--muted);letter-spacing:.06em;white-space:nowrap}
+.q .qx{font-family:var(--display);font-weight:700;color:var(--gold);white-space:nowrap}
+.q.locked{opacity:.45} .q.locked .cb{border-color:var(--muted);cursor:not-allowed}
+.subtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.subtabs button{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-family:var(--display);font-weight:600;letter-spacing:.08em;font-size:14px;color:var(--muted);cursor:pointer}
+.subtabs button.on{color:#fff;border-color:rgba(139,92,246,.6);background:var(--violet-dim)}
+.pane{display:none}.pane.on{display:block}
+/* vault */
+.vault{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.col{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:16px;min-height:220px}
+.col.active{border-color:rgba(212,167,44,.6)}
+.raid{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.raid b{font-family:var(--display);letter-spacing:.06em}
+.raid .mv{display:flex;gap:4px}
+/* stats */
+.stat{display:grid;grid-template-columns:150px 1fr 48px;gap:10px;align-items:center;padding:6px 0}
+.stat .bar{height:8px}
+.stat .num{text-align:right}
+/* council */
+.council{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.member{background:var(--s1);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.member.igris{border-color:rgba(139,92,246,.5)} .member.monarch{border-color:rgba(212,167,44,.6)} .member.chakra{border-color:rgba(167,139,250,.4)}
+.member .art{height:220px;background:var(--s2);position:relative;display:flex;align-items:center;justify-content:center}
+.member .art img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.member .body{padding:16px;display:flex;flex-direction:column;gap:6px}
+.member .name{font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:.12em}
+.member .role{color:var(--violet2);font-size:13px;letter-spacing:.16em;text-transform:uppercase;font-weight:600}
+.member q{display:block;color:var(--text2);font-style:italic}
+.brief{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.say{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:16px}
+.say .who{font-family:var(--display);font-weight:700;letter-spacing:.14em;color:var(--violet2);font-size:14px}
+/* chronicle */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:end;height:140px}
+.week div{background:var(--s3);border-radius:4px 4px 0 0;position:relative}
+.week div i{position:absolute;left:0;right:0;bottom:0;background:var(--violet);border-radius:4px 4px 0 0}
+.week div b{position:absolute;left:0;right:0;top:-22px;text-align:center;font-size:12px;color:var(--text2);font-family:var(--display)}
+.week div span{position:absolute;left:0;right:0;bottom:-22px;text-align:center;font-size:12px;color:var(--muted)}
+.heat{display:grid;grid-template-columns:repeat(15,1fr);gap:4px}
+.heat i{aspect-ratio:1;border-radius:3px;background:var(--s3);display:block}
+.heat i.l1{background:rgba(139,92,246,.35)} .heat i.l2{background:rgba(139,92,246,.6)} .heat i.l3{background:var(--violet)}
+.loop{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.loop div{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;font-family:var(--display);font-weight:700;letter-spacing:.14em}
+.loop div.on{border-color:var(--violet);color:#fff;background:var(--violet-dim)}
+/* summon */
+.qform{display:flex;flex-direction:column;gap:14px;max-width:760px}
+.qform .qq{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.qform .qq b{font-family:var(--display);letter-spacing:.06em;font-size:18px}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pills label{border:1px solid var(--border2);border-radius:999px;padding:4px 12px;cursor:pointer;font-size:15px}
+.pills input{display:none}
+.pills label.on{background:var(--violet-dim);border-color:var(--violet)}
+.summoned{text-align:center;padding:40px 20px}
+.summoned h1{font-size:42px}
+.ticker{font-family:var(--display);letter-spacing:.14em;color:var(--violet2);font-size:16px;line-height:2}
+.lvlup{position:fixed;inset:0;background:rgba(8,8,8,.9);display:flex;align-items:center;justify-content:center;z-index:60;text-align:center}
+.lvlup h1{font-size:64px;letter-spacing:.2em;color:var(--gold)}
+@media (max-width:900px){.hero{grid-template-columns:1fr}.portrait{min-height:360px}.g4,.g3{grid-template-columns:1fr 1fr}.vault,.council{grid-template-columns:1fr}.brief{grid-template-columns:1fr}.heat{grid-template-columns:repeat(10,1fr)}}
+@media (max-width:560px){.g2,.g3,.g4{grid-template-columns:1fr}.stat{grid-template-columns:110px 1fr 40px}.loop{grid-template-columns:1fr 1fr}.brand{font-size:20px}}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+<header class="top">
+  <div class="brand" id="brand">PRAT LIFE OS<small>SHADOW MONARCH PROTOCOL</small></div>
+  <div class="mode" role="tablist" aria-label="Mode">
+    <button id="m-prat" class="on" data-mode="prat">MONARCH</button>
+    <button id="m-template" data-mode="template">TEMPLATE</button>
+  </div>
+</header>
+
+<!-- ================= COMMAND CENTER ================= -->
+<section class="screen on" id="s-cc">
+  <div class="hero">
+    <div class="portrait" id="portrait"></div>
+    <div class="stack">
+      <div class="card">
+        <div class="row sp">
+          <div><div class="label v" id="cc-season">SEASON 2026</div><h1 id="cc-title">LEVEL 26</h1></div>
+          <div class="row"><span class="chip g" id="cc-rank">GOLD I</span><span class="chip v" id="cc-shadow">A-RANK</span></div>
+        </div>
+        <div class="xpline" style="margin-top:8px"><span class="num big" id="cc-xp">6,850</span><span class="muted">/ <span id="cc-xpmax">12,000</span> XP</span><span class="chip" id="cc-streak">STREAK 0</span><span class="chip" id="cc-today">TODAY +0 XP</span></div>
+        <div class="bar" style="margin-top:10px"><i id="cc-bar"></i></div>
+      </div>
+      <div class="mainq">
+        <div class="label g">MAIN QUEST</div>
+        <h2 id="cc-mq">BUILD THE MACHINE</h2>
+        <div class="t2" id="cc-mqd">Build a personal operating system capable of repeatedly accomplishing extraordinary things.</div>
+        <div class="orders" style="margin-top:14px"><div class="label g">TODAY'S ORDERS</div><div id="cc-order" style="font-family:var(--display);font-size:20px;font-weight:600;letter-spacing:.04em">—</div></div>
+      </div>
+      <div class="grid g3">
+        <div class="card" id="cc-body"><div class="label">BODY</div><h3>—</h3><div class="small muted"></div></div>
+        <div class="card" id="cc-build"><div class="label">BUILD</div><h3>—</h3><div class="small muted"></div></div>
+        <div class="card" id="cc-life"><div class="label">LIFE</div><h3>—</h3><div class="small muted"></div></div>
+      </div>
+      <div class="card v"><div class="label v">COUNCIL ORDER</div><div id="cc-council" class="t2">—</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= QUEST BOARD ================= -->
+<section class="screen" id="s-quests">
+  <div class="row sp"><h1>QUEST BOARD</h1><span class="chip" id="qb-date"></span></div>
+  <div class="subtabs" id="qtabs"><button data-p="today" class="on">TODAY</button><button data-p="daily">DAILY QUESTS</button><button data-p="boss">BOSS QUESTS</button><button data-p="proof">PROOF QUESTS</button></div>
+  <div class="pane on" id="p-today"><div class="grid" id="q-today"></div></div>
+  <div class="pane" id="p-daily">
+    <div class="row sp" style="margin-bottom:10px"><div class="muted small" id="daily-note"></div><button class="btn sm" id="btn-import-quests">IMPORT QUESTS JSON</button></div>
+    <div class="grid" id="q-daily"></div>
+  </div>
+  <div class="pane" id="p-boss"><div class="grid" id="q-boss"></div></div>
+  <div class="pane" id="p-proof">
+    <div class="card" style="margin-bottom:12px"><div class="label v">PROOFQUEST</div><div class="t2">Take proof → complete quest → after proof → verify → bonus XP. Photos stay in this browser only.</div></div>
+    <div class="grid g2" id="q-proof"></div>
+  </div>
+</section>
+
+<!-- ================= SHADOW VAULT ================= -->
+<section class="screen" id="s-vault">
+  <div class="row sp"><h1>SHADOW VAULT</h1><button class="btn sm" id="btn-add-raid">+ ADD RAID</button></div>
+  <p class="t2">Maximum <b>3 active raids</b>. Pulling a fourth into ACTIVE forces you to seal one. That rule is the feature.</p>
+  <div class="vault">
+    <div class="col active"><div class="label g">ACTIVE RAIDS <span id="v-count">0/3</span></div><div id="v-active"></div></div>
+    <div class="col"><div class="label">NEXT</div><div id="v-next"></div></div>
+    <div class="col"><div class="label">SEALED / ARCHIVED</div><div id="v-sealed"></div></div>
+  </div>
+</section>
+
+<!-- ================= STATS & ASCENSION ================= -->
+<section class="screen" id="s-stats">
+  <h1>STATS &amp; ASCENSION</h1>
+  <div class="grid g2">
+    <div class="card"><div class="label v">CURRENT · LIVE FROM QUESTS</div><div id="stats-live"></div></div>
+    <div class="card"><div class="label">LEGACY BASELINE · <span id="stats-base-label">SEASON 2026</span></div><div id="stats-base"></div></div>
+  </div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card g"><div class="label g">SHADOW RANK</div><h2 id="asc-rank">A-RANK → S-RANK</h2><div class="t2" id="asc-gate"></div><div class="bar gold" style="margin-top:10px"><i id="asc-bar"></i></div></div>
+    <div class="card"><div class="label">PILLARS</div><div id="pillars"></div></div>
+  </div>
+  <div class="card" style="margin-top:12px"><div class="label">90-DAY OBJECTIVES</div><div id="obj90" class="grid g2" style="margin-top:8px"></div></div>
+</section>
+
+<!-- ================= COUNCIL ================= -->
+<section class="screen" id="s-council">
+  <h1>THE COUNCIL</h1>
+  <div class="council" id="council"></div>
+  <h2 style="margin-top:20px">COUNCIL BRIEFING</h2>
+  <div class="brief"><div class="say"><div class="who" id="who-igris">IGRIS — “What must be executed?”</div><div id="say-igris" class="t2"></div></div><div class="say"><div class="who" id="who-chakra">CHAKRA — “What is the highest-leverage move?”</div><div id="say-chakra" class="t2"></div></div></div>
+  <div class="row" style="margin-top:12px"><button class="btn g" id="btn-accept">ACCEPT ORDER</button><button class="btn" id="btn-modify">MODIFY</button><button class="btn" id="btn-override">OVERRIDE</button></div>
+</section>
+
+<!-- ================= CHRONICLE ================= -->
+<section class="screen" id="s-chron">
+  <h1>CHRONICLE</h1>
+  <div class="loop" id="loop"><div>PLAN</div><div>EXECUTE</div><div>REFLECT</div><div>OPTIMIZE</div></div>
+  <div class="grid g4" style="margin-top:12px">
+    <div class="card"><div class="label">TODAY'S XP</div><div class="num" style="font-size:32px" id="ch-xp">0</div></div>
+    <div class="card"><div class="label">7-DAY STREAK</div><div class="num" style="font-size:32px" id="ch-streak">0</div></div>
+    <div class="card"><div class="label">30-DAY CONSISTENCY</div><div class="num" style="font-size:32px" id="ch-cons">0%</div></div>
+    <div class="card"><div class="label">QUESTS COMPLETED</div><div class="num" style="font-size:32px" id="ch-total">0</div></div>
+  </div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><div class="label">LAST 7 DAYS · XP</div><div class="week" id="ch-week" style="margin:30px 0 26px"></div></div>
+    <div class="card"><div class="label">LAST 30 DAYS</div><div class="heat" id="ch-heat" style="margin-top:12px"></div></div>
+  </div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><div class="label">REFLECT · JOURNAL</div><textarea id="journal" placeholder="What moved today? What griefed the team?"></textarea><div class="row sp" style="margin-top:8px"><span class="muted small">Saved per day, in this browser.</span><button class="btn sm" id="btn-journal">SAVE</button></div></div>
+    <div class="card"><div class="label">WEEKLY REVIEW</div><div id="ch-review" class="t2"></div></div>
+  </div>
+  <div class="card" style="margin-top:12px"><div class="row sp"><div class="label">SYSTEM DATA</div><div class="row"><button class="btn sm" id="btn-export">EXPORT PROFILE</button><button class="btn sm" id="btn-import">IMPORT PROFILE</button><button class="btn sm" id="btn-reset">RESET SYSTEM</button></div></div><div class="muted small" style="margin-top:6px">Everything lives in this browser's storage. Export before switching devices. Nothing is sent anywhere.</div></div>
+</section>
+
+<!-- ================= SUMMON (TEMPLATE) ================= -->
+<section class="screen" id="s-summon">
+  <div id="summon-form">
+    <div class="label v">TEMPLATE MODE</div>
+    <h1>SUMMON THE SYSTEM</h1>
+    <p class="t2" style="max-width:66ch">Ten answers. The System generates your season, main quest, pillars, quest queue, XP framework, debuffs and council. Nothing here is shared; it stays in your browser until you export it.</p>
+    <div class="qform" id="intake"></div>
+    <div class="row" style="margin-top:16px"><button class="btn v" id="btn-summon">SUMMON</button><button class="btn" id="btn-import-t">IMPORT PROFILE</button></div>
+  </div>
+  <div id="summon-done" class="summoned hidden">
+    <div class="sigil" style="margin:0 auto 20px">S</div>
+    <h1>THE SYSTEM HAS RECOGNIZED YOU.</h1>
+    <div class="ticker" id="ticker"></div>
+    <div class="row" style="justify-content:center;margin-top:20px"><button class="btn v" id="btn-enter">ENTER COMMAND CENTER</button><button class="btn" id="btn-resummon">RE-SUMMON</button></div>
+  </div>
+</section>
+</div>
+
+<nav class="tabs" id="tabs">
+  <button data-s="cc" class="on">COMMAND</button><button data-s="quests">QUESTS</button><button data-s="vault">VAULT</button><button data-s="stats">STATS</button><button data-s="council">COUNCIL</button><button data-s="chron">CHRONICLE</button><button data-s="summon">SUMMON</button>
+</nav>
+<div class="toast" id="toast"></div>
+<input type="file" id="file-img" accept="image/*" class="hidden">
+<input type="file" id="file-json" accept="application/json" class="hidden">
+
+<script>
+/* =========================================================
+   PRAT LIFE OS — Shadow Monarch Protocol
+   Single-file app. State in localStorage. No network.
+   ========================================================= */
+const KEY = {prat:'plos.prat.v1', template:'plos.template.v1', mode:'plos.mode', assets:'plos.assets'};
+const $ = s => document.querySelector(s);
+const todayKey = (d=new Date()) => d.toISOString().slice(0,10);
+const fmt = n => n.toLocaleString('en-US');
+let toastT; function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2200);}
+
+/* ---------- PRAT SEED (Monarch mode) ----------
+   Numbers are the real Life OS baseline, not invented:
+   Level 26 · Season 2026 · XP 6,850/12,000 · Gold I · Shadow Rank A → S.
+   Daily quests below are a SEED of things Prat has actually set for himself
+   (PRAT.EXE: 10k steps, protein 180g+, bed by 11PM, build/ship; Ranked Mode: the 3 top quests).
+   The original 26 time-locked SMP quests live in sololevelingproject on disk —
+   import them via QUESTS → IMPORT QUESTS JSON; they replace this seed. */
+let PRAT_SEED = null;
+
+/* ---------- state ---------- */
+let mode = localStorage.getItem(KEY.mode) || 'prat';
+let S = null;
+function load(){
+  const raw = localStorage.getItem(mode==='prat'?KEY.prat:KEY.template);
+  if(raw){ try{ S = JSON.parse(raw); if(S&&S.xp===undefined) S.xp=S.meta.xp||0; return; }catch(e){} }
+  S = mode==='prat' ? JSON.parse(JSON.stringify(PRAT_SEED)) : null;
+}
+function save(){ try{ localStorage.setItem(mode==='prat'?KEY.prat:KEY.template, JSON.stringify(S)); }catch(e){ toast('Storage full — export & clear proof photos'); } }
+function assets(){ try{ return JSON.parse(localStorage.getItem(KEY.assets)||'{}'); }catch(e){ return {}; } }
+function setAsset(k,v){ const a=assets(); a[k]=v; try{ localStorage.setItem(KEY.assets, JSON.stringify(a)); }catch(e){ toast('Image too large for storage'); } }
+
+/* ---------- XP engine ---------- */
+function todayXP(){ return (S.xpLog[todayKey()]||0); }
+function award(xp, why){
+  S.xp += xp; S.xpLog[todayKey()] = (S.xpLog[todayKey()]||0) + xp;
+  let leveled=false;
+  while(S.xp >= S.meta.xpMax){ S.xp -= S.meta.xpMax; S.meta.level++; S.meta.xpMax = Math.round(S.meta.xpMax*1.15/100)*100; leveled=true; }
+  if(leveled){ levelUp(); }
+  save(); toast(`+${xp} XP · ${why}`);
+}
+function unaward(xp){ S.xp = Math.max(0, S.xp - xp); S.xpLog[todayKey()] = Math.max(0,(S.xpLog[todayKey()]||0) - xp); save(); }
+function levelUp(){
+  const d=document.createElement('div'); d.className='lvlup'; d.innerHTML=`<div><div class="label g">ASCENSION</div><h1>LEVEL ${S.meta.level}</h1><div class="t2">The System acknowledges the Monarch.</div><br><button class="btn g">CONTINUE</button></div>`;
+  d.querySelector('button').onclick=()=>d.remove(); document.body.appendChild(d);
+}
+function isDone(id, day=todayKey()){ return !!(S.completions[day]&&S.completions[day][id]); }
+function toggle(q){
+  const day=todayKey(); S.completions[day]=S.completions[day]||{};
+  if(S.completions[day][q.id]){ delete S.completions[day][q.id]; unaward(q.xp); }
+  else { S.completions[day][q.id]=Date.now(); award(q.xp, q.name.split(' — ')[0].split(':')[0]); }
+  render();
+}
+function questForDay(q, d=new Date()){ if(q.days && !q.days.includes(d.getDay())) return false; return true; }
+function streak(){
+  let n=0; const d=new Date();
+  for(let i=0;i<365;i++){ const k=todayKey(d); const c=S.completions[k]; const any=c&&Object.keys(c).length>0; if(any) n++; else if(i>0) break; d.setDate(d.getDate()-1); }
+  return n;
+}
+function consistency30(){ let hit=0; const d=new Date(); for(let i=0;i<30;i++){ const c=S.completions[todayKey(d)]; if(c&&Object.keys(c).length) hit++; d.setDate(d.getDate()-1);} return Math.round(hit/30*100); }
+function totalDone(){ return Object.values(S.completions).reduce((a,c)=>a+Object.keys(c).length,0); }
+function liveStats(){
+  // rolling 14-day: each completed quest feeds its stats; scale to 0–10 relative to available
+  const out={}; S.liveStats.forEach(s=>out[s]={got:0,pos:0});
+  const d=new Date();
+  for(let i=0;i<14;i++){ const k=todayKey(d); const c=S.completions[k]||{}; S.quests.filter(q=>q.tier==='daily'||q.tier==='main').forEach(q=>{ (q.stats||[]).forEach(s=>{ if(out[s]){ out[s].pos+=1; if(c[q.id]) out[s].got+=1; } }); }); d.setDate(d.getDate()-1); }
+  const r={}; Object.keys(out).forEach(s=>r[s]= out[s].pos? Math.round(out[s].got/out[s].pos*100)/10 : 0); return r;
+}
+
+/* ---------- council brain (rule-based, local) ---------- */
+function brief(){
+  const day=todayKey(); const c=S.completions[day]||{};
+  const mains=S.quests.filter(q=>q.tier==='main'); const dailies=S.quests.filter(q=>q.tier==='daily'&&questForDay(q));
+  const openMain=mains.filter(q=>!c[q.id]); const openDaily=dailies.filter(q=>!c[q.id]);
+  const active=S.raids.active; const st=streak();
+  let igris, chakra, order;
+  const h=new Date().getHours();
+  if(openMain.length===0 && openDaily.length===0){ igris='Board is clear. Log proof, then rest — recovery is a stat.'; chakra='Nothing left to squeeze today. Tomorrow’s highest-leverage move is the first 30 minutes on '+(active[0]||'the active raid')+'.'; order='REST · BED BY 11PM'; }
+  else {
+    const body=S.quests.find(q=>q.id==='mq-body'||q.cat==='BODY'); const bodyOpen=body&&!c[body.id];
+    if(h<12 && bodyOpen){ igris='Morning. Train first — the body quest anchors the day. Then one 30-minute block on '+(active[0]||'the raid')+'.'; }
+    else if(openMain.length){ igris='Execute: '+openMain[0].name.split(' — ')[0]+'. One block, no redesign, ship the smallest visible thing.'; }
+    else { igris='Mains are done. Clear '+openDaily.length+' dailies — '+openDaily.map(q=>q.name).slice(0,2).join(', ')+'.'; }
+    const build=active.length? active[0] : null;
+    chakra = active.length>3 ? 'You have more than three active raids. Seal one before anything else — WIP is the enemy.' :
+             (build? `Highest leverage: ${build}. Everything in NEXT stays sealed until ${build} has a URL or a build in someone’s hands.` : 'Name one active raid in the Vault. Without it every day is diffuse.');
+    if(st===0) chakra += ' Streak is 0 — one completed quest today restarts the machine.';
+    order = openMain.length ? openMain[0].name.split(':')[0].toUpperCase() : (openDaily[0]? openDaily[0].name.toUpperCase() : 'REST');
+  }
+  return {igris, chakra, order};
+}
+
+/* ---------- render ---------- */
+function render(){
+  if(!S){ renderEmptyTemplate(); return; }
+  const m=S.meta; const b=brief();
+  // header
+  $('#brand').innerHTML = mode==='prat' ? 'PRAT LIFE OS<small>SHADOW MONARCH PROTOCOL</small>' : `${escapeHtml((m.name||'THE SYSTEM').toUpperCase())} LIFE OS<small>THE SYSTEM · TEMPLATE</small>`;
+  // command center
+  $('#cc-season').textContent=m.season; $('#cc-title').textContent='LEVEL '+m.level;
+  $('#cc-rank').textContent=m.rank; $('#cc-shadow').textContent=m.shadowRank;
+  $('#cc-xp').textContent=fmt(S.xp); $('#cc-xpmax').textContent=fmt(m.xpMax); $('#cc-bar').style.width=Math.min(100,S.xp/m.xpMax*100)+'%';
+  $('#cc-streak').textContent='STREAK '+streak(); $('#cc-today').textContent='TODAY +'+fmt(todayXP())+' XP';
+  $('#cc-mq').textContent=S.mainQuest.name; $('#cc-mqd').textContent=(S.mainQuest.sub?S.mainQuest.sub+' — ':'')+S.mainQuest.desc;
+  $('#cc-order').textContent = S.orders[todayKey()] || b.order;
+  const active=S.raids.active;
+  fillCard('#cc-body', S.body.arc, S.body.minimums.join(' · '));
+  fillCard('#cc-build', active[0]||'No active raid', active.length? `Active: ${active.join(' · ')}` : 'Open the Vault and name one.');
+  fillCard('#cc-life', S.life.protected, S.life.note||'');
+  $('#cc-council').innerHTML = `<b style="font-family:var(--display);letter-spacing:.1em;color:var(--violet2)">${escapeHtml(S.council[1].name)}</b> — ${escapeHtml(b.igris)}<br><b style="font-family:var(--display);letter-spacing:.1em;color:var(--violet2)">${escapeHtml(S.council[2].name)}</b> — ${escapeHtml(b.chakra)}`;
+  $('#who-igris').textContent=S.council[1].name+' — “What must be executed?”'; $('#who-chakra').textContent=S.council[2].name+' — “What is the highest-leverage move?”';
+  renderPortrait();
+  // quests
+  $('#qb-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  const today=S.quests.filter(q=>(q.tier==='main'||q.tier==='daily')&&questForDay(q));
+  $('#q-today').innerHTML = today.map(qHtml).join('') || '<div class="muted">No quests today.</div>';
+  const dailies=S.quests.filter(q=>q.tier==='daily');
+  $('#daily-note').textContent = S.questsImported ? `${dailies.length} quests imported from disk.` : `${dailies.length} seed quests (from PRAT.EXE / Ranked Mode). Import the original 26 SMP quests from sololevelingproject to replace them.`;
+  $('#q-daily').innerHTML = dailies.map(qHtml).join('');
+  $('#q-boss').innerHTML = S.quests.filter(q=>q.tier==='boss').map(qHtml).join('');
+  $('#q-proof').innerHTML = S.quests.filter(q=>q.tier==='proof').map(proofHtml).join('');
+  $$('#s-quests .q .cb').forEach(el=>el.onclick=()=>{ const q=S.quests.find(x=>x.id===el.dataset.id); if(q) toggle(q); });
+  // vault
+  renderVault();
+  // stats
+  const ls=liveStats(); $('#stats-live').innerHTML = Object.keys(ls).map(k=>statRow(k,ls[k])).join('');
+  $('#stats-base-label').textContent=S.baseline.label; $('#stats-base').innerHTML = Object.keys(S.baseline.stats).map(k=>statRow(k,S.baseline.stats[k],true)).join('');
+  $('#asc-rank').textContent = `${m.shadowRank} → ${m.nextShadowRank}`; $('#asc-gate').textContent=m.shadowGate;
+  const gate=S.quests.find(q=>q.id==='boss-srank'); $('#asc-bar').style.width = (gate&&Object.values(S.completions).some(c=>c[gate.id]))?'100%':Math.min(60,S.xp/m.xpMax*60)+'%';
+  $('#pillars').innerHTML = S.pillars.map(p=>`<div class="q" style="margin-top:8px"><span class="qn">${escapeHtml(p)}</span></div>`).join('');
+  $('#obj90').innerHTML = S.objectives90.map(o=>`<div class="q"><span class="qn">${escapeHtml(o)}</span></div>`).join('');
+  // council
+  const A=assets();
+  $('#council').innerHTML = S.council.map(c=>{ const src=(mode==='template'?null:A[c.key])||(c.asset?'assets/'+c.asset:''); return `<div class="member ${c.key}"><div class="art" data-key="${c.key}">${src?`<img src="${src}" alt="" onerror="var p=this.parentNode;var m=this.closest('.member');this.remove();p.style.backgroundImage='url('+window.__COUNCIL+')';p.style.backgroundSize='auto 200%';p.style.backgroundPosition=m.classList.contains('igris')?'93% 22%':m.classList.contains('chakra')?'7% 22%':'50% 18%'">`:''}<div class="slot ${src?'hidden':''}"><div class="sigil" style="width:80px;height:80px;font-size:28px">${c.name[0]}</div><button class="btn sm up" data-key="${c.key}">ADD IMAGE</button></div></div><div class="body"><div class="name">${escapeHtml(c.name)}</div><div class="role">${escapeHtml(c.role)}</div>${c.strengths?`<div class="small t2">${escapeHtml(c.strengths)}</div>`:''}<q>${escapeHtml(c.quote)}</q></div></div>`; }).join('');
+  $$('#council .up').forEach(bn=>bn.onclick=()=>pickImage(bn.dataset.key));
+  $('#say-igris').textContent=b.igris; $('#say-chakra').textContent=b.chakra;
+  // chronicle
+  $('#ch-xp').textContent=fmt(todayXP()); $('#ch-streak').textContent=streak(); $('#ch-cons').textContent=consistency30()+'%'; $('#ch-total').textContent=totalDone();
+  renderWeek(); renderHeat(); $('#journal').value=S.journal[todayKey()]||''; renderReview();
+  const done=Object.keys(S.completions[todayKey()]||{}).length; const phase = done===0?0: (today.length&&done>=today.length?2:1); $$('#loop div').forEach((d,i)=>d.classList.toggle('on', i===phase || (i===3 && S.journal[todayKey()])));
+}
+function fillCard(sel,h,t){ const c=$(sel); c.querySelector('h3').textContent=h; c.querySelector('div.small').textContent=t; }
+function qHtml(q){ const d=isDone(q.id); return `<div class="q ${d?'done':''}"><button class="cb" data-id="${q.id}" aria-label="complete">${d?'✓':''}</button><span class="qn">${escapeHtml(q.name)}</span>${q.time?`<span class="qm">${escapeHtml(q.time)}</span>`:''}<span class="qm">${escapeHtml(q.cat||'')}</span><span class="qx">+${q.xp}</span></div>`; }
+function proofHtml(q){ const p=S.proofs[q.id]||{}; const d=isDone(q.id); return `<div class="card"><div class="row sp"><h3>${escapeHtml(q.name)}</h3><span class="qx" style="color:var(--gold);font-family:var(--display);font-weight:700">+${q.xp}</span></div><div class="grid g2" style="margin-top:10px">${['before','after'].map(k=>`<div class="portrait" style="min-height:140px;border-radius:10px" >${p[k]?`<img src="${p[k]}" alt="${k}">`:''}<div class="slot"><button class="btn sm proof" data-id="${q.id}" data-k="${k}">${p[k]?'REPLACE':'TAKE'} ${k.toUpperCase()}</button></div></div>`).join('')}</div><div class="row sp" style="margin-top:10px"><label class="small t2">Improvement <input type="range" min="0" max="100" value="${p.score||70}" data-id="${q.id}" class="score" style="vertical-align:middle;width:140px"> <b class="num sv">${p.score||70}</b>/100</label><button class="btn ${d?'':'v'} sm verify" data-id="${q.id}" ${p.before&&p.after?'':'disabled'}>${d?'VERIFIED ✓':'VERIFY → XP'}</button></div></div>`; }
+function statRow(k,v,legacy){ return `<div class="stat"><span class="small ${legacy?'muted':''}">${escapeHtml(k)}</span><div class="bar"><i style="width:${v*10}%"></i></div><span class="num small">${v}</span></div>`; }
+function renderPortrait(){ const A=assets(); const el=$('#portrait'); const src=A.monarch||'assets/monarch.jpg'; const COUNCIL='assets/council.jpg'; window.__COUNCIL=COUNCIL; const isT=mode==='template';
+  el.innerHTML = isT ? `<div class="slot"><div class="sigil">${escapeHtml((S.meta.name||'S')[0].toUpperCase())}</div><div class="label v">${escapeHtml(S.meta.name||'')}</div><div class="muted small">Template mode — no personal portrait.</div><button class="btn sm up-m">ADD YOUR PORTRAIT</button></div>`
+    : `<img src="${src}" alt="Ultimate Shadow Form" onerror="this.src=window.__COUNCIL;this.onerror=function(){this.remove();document.querySelector('#portrait .slot').classList.remove('hidden')};document.querySelector('#portrait .cap b').textContent='THE COUNCIL · SEP 9 2026'"><div class="slot hidden"><div class="sigil">P</div><div class="label v">ULTIMATE SHADOW FORM</div><div class="muted small" style="max-width:32ch">Drop the original portrait here (or place assets/monarch.jpg in the repo). The System will not generate an impostor.</div><button class="btn sm up-m">ADD PORTRAIT</button></div><div class="cap"><span class="label g">THE MONARCH</span><b>${escapeHtml(S.meta.name)}</b></div>`;
+  const b=el.querySelector('.up-m'); if(b) b.onclick=()=>pickImage('monarch'); }
+function renderVault(){ const r=S.raids; $('#v-count').textContent=`${r.active.length}/3`;
+  const item=(n,col)=>`<div class="raid"><b>${escapeHtml(n)}</b><span class="mv">${col!=='active'?`<button class="btn sm mv-b" data-n="${escapeAttr(n)}" data-to="active">▲ ACTIVE</button>`:''}${col!=='next'?`<button class="btn sm mv-b" data-n="${escapeAttr(n)}" data-to="next">NEXT</button>`:''}${col!=='sealed'?`<button class="btn sm mv-b" data-n="${escapeAttr(n)}" data-to="sealed">SEAL</button>`:''}</span></div>`;
+  $('#v-active').innerHTML=r.active.map(n=>item(n,'active')).join('')||'<div class="muted small" style="margin-top:8px">Empty. Name one.</div>';
+  $('#v-next').innerHTML=r.next.map(n=>item(n,'next')).join(''); $('#v-sealed').innerHTML=r.sealed.map(n=>item(n,'sealed')).join('');
+  $$('.mv-b').forEach(b=>b.onclick=()=>moveRaid(b.dataset.n,b.dataset.to)); }
+function moveRaid(n,to){ const r=S.raids; ['active','next','sealed'].forEach(k=>{ r[k]=r[k].filter(x=>x!==n); });
+  if(to==='active' && r.active.length>=3){ const seal=prompt(`ACTIVE is full (3/3). Type the raid to SEAL to make room for "${n}":\n${r.active.join('\n')}`); if(!seal||!r.active.includes(seal)){ r.next.unshift(n); save(); render(); toast('Vault rule held: 3 active max'); return; } r.active=r.active.filter(x=>x!==seal); r.sealed.unshift(seal); }
+  r[to].unshift(n); save(); render(); }
+function renderWeek(){ const el=$('#ch-week'); const d=new Date(); d.setDate(d.getDate()-6); const days=[]; for(let i=0;i<7;i++){ const k=todayKey(d); days.push({k,xp:S.xpLog[k]||0,lab:d.toLocaleDateString('en-US',{weekday:'narrow'})}); d.setDate(d.getDate()+1);} const mx=Math.max(100,...days.map(x=>x.xp)); el.innerHTML=days.map(x=>`<div><b>${x.xp?fmt(x.xp):''}</b><i style="height:${x.xp/mx*100}%"></i><span>${x.lab}</span></div>`).join(''); }
+function renderHeat(){ const el=$('#ch-heat'); const d=new Date(); d.setDate(d.getDate()-29); let h=''; for(let i=0;i<30;i++){ const c=S.completions[todayKey(d)]; const n=c?Object.keys(c).length:0; h+=`<i class="${n>=5?'l3':n>=3?'l2':n>=1?'l1':''}" title="${todayKey(d)} · ${n} quests"></i>`; d.setDate(d.getDate()+1);} el.innerHTML=h; }
+function renderReview(){ const d=new Date(); let xp=0,q=0,days=0; for(let i=0;i<7;i++){ const k=todayKey(d); xp+=S.xpLog[k]||0; const c=S.completions[k]; if(c&&Object.keys(c).length){days++; q+=Object.keys(c).length;} d.setDate(d.getDate()-1);} const shipped=Object.values(S.completions).reduce((a,c)=>a+(c['d-ship']?1:0),0);
+  $('#ch-review').innerHTML=`<div class="grid g2"><div><div class="label">XP THIS WEEK</div><div class="num" style="font-size:26px">${fmt(xp)}</div></div><div><div class="label">ACTIVE DAYS</div><div class="num" style="font-size:26px">${days}/7</div></div><div><div class="label">QUESTS</div><div class="num" style="font-size:26px">${q}</div></div><div><div class="label">SHIPS LOGGED</div><div class="num" style="font-size:26px">${shipped}</div></div></div><div class="small t2" style="margin-top:10px">${days>=5?'System on autopilot. Hold the line.':days>=3?'Machine is running, not yet automatic. Protect the build block.':'Restart is one quest away. Do the body quest first tomorrow.'}</div>`; }
+
+/* ---------- images ---------- */
+let pickTarget=null;
+function pickImage(k){ pickTarget=k; $('#file-img').value=''; $('#file-img').click(); }
+$('#file-img').onchange=e=>{ const f=e.target.files[0]; if(!f) return; shrink(f, 900, data=>{ if(pickTarget&&pickTarget.startsWith('proof:')){ const [_,id,kk]=pickTarget.split(':'); S.proofs[id]=S.proofs[id]||{}; S.proofs[id][kk]=data; save(); } else setAsset(pickTarget,data); render(); toast('Image stored in this browser'); }); };
+function shrink(file,max,cb){ const img=new Image(); img.onload=()=>{ const s=Math.min(1,max/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s); c.getContext('2d').drawImage(img,0,0,c.width,c.height); cb(c.toDataURL(file.type==='image/gif'?'image/png':'image/jpeg',.85)); }; img.src=URL.createObjectURL(file); }
+document.addEventListener('click',e=>{ const p=e.target.closest('.proof'); if(p){ pickImage(`proof:${p.dataset.id}:${p.dataset.k}`); }
+  const v=e.target.closest('.verify'); if(v&&!v.disabled){ const q=S.quests.find(x=>x.id===v.dataset.id); if(!q||isDone(q.id)) return; const sc=S.proofs[q.id].score||70; const bonus=Math.round(q.xp*(sc>=85?1.5:sc>=60?1:0.5)); S.completions[todayKey()]=S.completions[todayKey()]||{}; S.completions[todayKey()][q.id]=Date.now(); award(bonus,`proof verified ${sc}/100`); render(); } });
+document.addEventListener('input',e=>{ if(e.target.classList.contains('score')){ const id=e.target.dataset.id; S.proofs[id]=S.proofs[id]||{}; S.proofs[id].score=+e.target.value; e.target.parentNode.querySelector('.sv').textContent=e.target.value; save(); } });
+
+/* ---------- council actions ---------- */
+$('#btn-accept').onclick=()=>{ const b=brief(); S.orders[todayKey()]=b.order; save(); render(); toast('Order accepted'); go('cc'); };
+$('#btn-modify').onclick=()=>{ const v=prompt('Modify today\'s order:', S.orders[todayKey()]||brief().order); if(v){ S.orders[todayKey()]=v.toUpperCase(); save(); render(); go('cc'); } };
+$('#btn-override').onclick=()=>{ const v=prompt('Monarch override — what is today\'s order?'); if(v){ S.orders[todayKey()]='OVERRIDE · '+v.toUpperCase(); save(); render(); go('cc'); } };
+$('#btn-journal').onclick=()=>{ S.journal[todayKey()]=$('#journal').value; save(); render(); toast('Reflected'); };
+$('#btn-add-raid').onclick=()=>{ const v=prompt('Name the raid (project):'); if(v){ S.raids.next.unshift(v.trim()); save(); render(); } };
+
+/* ---------- import / export ---------- */
+function download(name,obj){ const a=document.createElement('a'); const url=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'})); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),30000); }
+$('#btn-export').onclick=()=>download(`${mode==='prat'?'prat':'system'}-profile-${todayKey()}.json`, S);
+let jsonTarget=null;
+function pickJson(t){ jsonTarget=t; $('#file-json').value=''; $('#file-json').click(); }
+$('#btn-import').onclick=()=>pickJson('profile'); $('#btn-import-t').onclick=()=>pickJson('profile'); $('#btn-import-quests').onclick=()=>pickJson('quests');
+$('#file-json').onchange=e=>{ const f=e.target.files[0]; if(!f) return; f.text().then(t=>{ try{ const j=JSON.parse(t);
+  if(jsonTarget==='quests'){ const arr=Array.isArray(j)?j:(j.quests||[]); const norm=arr.map((q,i)=>({id:q.id||('smp-'+i), name:q.name||q.title||('Quest '+(i+1)), cat:q.category||q.cat||q.pillar||'Discipline', time:q.time||q.window||q.unlock||'', xp:+(q.xp||q.reward||50), tier:'daily', stats:q.stats||[catStat(q.category||q.cat||q.pillar)]}));
+    if(!norm.length){ toast('No quests found in file'); return; } S.quests=S.quests.filter(q=>q.tier!=='daily').concat(norm); S.questsImported=true; save(); render(); toast(`${norm.length} quests imported`); }
+  else { if(!j.meta||!j.quests){ toast('Not a Life OS profile'); return; } S=j; save(); render(); toast('Profile restored'); go('cc'); }
+ }catch(err){ toast('Invalid JSON'); } }); };
+function catStat(c=''){ c=c.toLowerCase(); return c.includes('fit')?'BODY':c.includes('nutri')?'BODY':c.includes('focus')?'FOCUS':c.includes('disc')?'DISCIPLINE':'EXECUTION'; }
+$('#btn-reset').onclick=()=>{ if(confirm('Reset the System? This wipes this browser\'s data for the current mode. Export first.')){ localStorage.removeItem(mode==='prat'?KEY.prat:KEY.template); load(); render(); toast('System reset'); } };
+
+/* ---------- template intake ---------- */
+const INTAKE=[
+ {k:'name', q:'What should the System call you?', t:'text', ph:'Name or callsign'},
+ {k:'season', q:'What season are you in?', t:'text', ph:'rebuild · cut · launch · school · career change · wedding · recovery'},
+ {k:'outcomes', q:'What three things must be true 90 days from now?', t:'lines', n:3, ph:'Outcome'},
+ {k:'pillars', q:'Choose your pillars (up to five).', t:'pills', opts:['Body','Career','Skill','Build','Capital','Relationships','Environment','Mind','Mission'], max:5},
+ {k:'builds', q:'Your active builds or projects — max three, each with a one-line definition of DONE.', t:'lines', n:3, ph:'Project — done when…'},
+ {k:'body', q:'What does your strongest physical version look like? Goal + realistic daily minimums.', t:'area', ph:'Goal… Minimums: train 4x, protein, steps, bedtime'},
+ {k:'life', q:'What relationship or life event deserves protected time?', t:'text', ph:'Partner · family · wedding · friends · travel'},
+ {k:'capital', q:'What are your capital rules?', t:'text', ph:'Savings/income target, spending rule, trading boundary'},
+ {k:'week', q:'What does a normal week actually look like?', t:'area', ph:'Wake/sleep, work or school, commute, gym, recurring commitments, real focus windows'},
+ {k:'debuffs', q:'Your three biggest debuffs — and how hard should the Council push you?', t:'debuff', ph:'Debuff'}
+];
+function renderIntake(){ const el=$('#intake'); el.innerHTML=INTAKE.map((it,i)=>{ let body='';
+  if(it.t==='text') body=`<input type="text" data-k="${it.k}" placeholder="${it.ph}">`;
+  else if(it.t==='area') body=`<textarea data-k="${it.k}" placeholder="${it.ph}"></textarea>`;
+  else if(it.t==='lines') body=Array.from({length:it.n},(_,j)=>`<input type="text" data-k="${it.k}" data-i="${j}" placeholder="${it.ph} ${j+1}">`).join('');
+  else if(it.t==='pills') body=`<div class="pills" data-k="${it.k}" data-max="${it.max}">${it.opts.map(o=>`<label><input type="checkbox" value="${o}">${o}</label>`).join('')}</div>`;
+  else if(it.t==='debuff') body=Array.from({length:3},(_,j)=>`<input type="text" data-k="debuffs" data-i="${j}" placeholder="Debuff ${j+1}">`).join('')+`<div class="pills" data-k="tone" data-max="1"><label><input type="checkbox" value="Gentle">Gentle</label><label><input type="checkbox" value="Direct">Direct</label><label><input type="checkbox" value="Ranked Mode">Ranked Mode</label></div>`;
+  return `<div class="qq"><span class="label v">${String(i+1).padStart(2,'0')} / 10</span><b>${it.q}</b>${body}</div>`; }).join('');
+  $$('.pills label').forEach(l=>l.onclick=e=>{ setTimeout(()=>{ const box=l.parentNode; const max=+box.dataset.max; const on=$$('input:checked',box); if(on.length>max){ l.querySelector('input').checked=false; } $$('label',box).forEach(x=>x.classList.toggle('on',x.querySelector('input').checked)); }); });
+}
+function $$(s,root=document){ return Array.from(root.querySelectorAll(s)); }
+function readIntake(){ const a={}; $$('#intake [data-k]').forEach(el=>{ const k=el.dataset.k; if(el.classList.contains('pills')){ a[k]=$$('input:checked',el).map(x=>x.value); } else if(el.dataset.i!==undefined){ a[k]=a[k]||[]; if(el.value.trim()) a[k].push(el.value.trim()); } else a[k]=el.value.trim(); }); return a; }
+function summon(a){
+  const name=(a.name||'PLAYER').toUpperCase(); const tone=(a.tone&&a.tone[0])||'Direct'; const pillars=a.pillars&&a.pillars.length?a.pillars:['Body','Build','Mind'];
+  const outcomes=(a.outcomes||[]).slice(0,3); const builds=(a.builds||[]).slice(0,3);
+  const quests=[
+    {id:'mq-body', name:'MAIN QUEST — BODY: '+(a.body?a.body.split(/[.\n]/)[0].slice(0,60):'Train · Fuel · Recover'), cat:'BODY', xp:300, tier:'main', stats:['BODY','RECOVERY']},
+    {id:'cq-core', name:'CORE QUEST — '+(pillars[1]||'SKILL').toUpperCase()+': Win the day. Compound.', cat:pillars[1]||'SKILL', xp:250, tier:'main', stats:['SKILL','EXECUTION']},
+    {id:'bq-build', name:'BOSS QUEST — '+(builds[0]?builds[0].split(/—|-|:/)[0].trim().toUpperCase():'SHIP ONE THING')+': one block toward DONE.', cat:'BUILD', xp:400, tier:'main', stats:['EXECUTION','DISCIPLINE']},
+  ];
+  const mins=(a.body||'').split(/[,;\n]/).map(s=>s.trim()).filter(s=>s&&s.length<40).slice(0,4);
+  (mins.length?mins:['Train','Protein target','Steps','Bedtime']).forEach((mn,i)=>quests.push({id:'d-body'+i,name:mn,cat:'Fitness',time:'daily',xp:50,tier:'daily',stats:['BODY']}));
+  quests.push({id:'d-build',name:'30-min block on the active build',cat:'Focus',time:'daily',xp:80,tier:'daily',stats:['EXECUTION','FOCUS']});
+  quests.push({id:'d-ship',name:'Ship one visible thing',cat:'Focus',time:'any',xp:70,tier:'daily',stats:['EXECUTION']});
+  if(a.life) quests.push({id:'d-life',name:'Protected time — '+a.life,cat:'Discipline',time:'evening',xp:50,tier:'daily',stats:['RELATIONSHIPS']});
+  if(a.capital) quests.push({id:'d-capital',name:'Capital rule held — '+a.capital.slice(0,50),cat:'Discipline',time:'daily',xp:30,tier:'daily',stats:['CAPITAL','DISCIPLINE']});
+  (a.debuffs||[]).forEach((d,i)=>quests.push({id:'d-debuff'+i,name:'Debuff resisted — '+d,cat:'Discipline',time:'daily',xp:40,tier:'daily',stats:['DISCIPLINE','FOCUS']}));
+  quests.push({id:'d-review',name:'Weekly 15-min review — what moved to Done?',cat:'Discipline',time:'Sun',xp:50,tier:'daily',days:[0],stats:['DISCIPLINE']});
+  outcomes.forEach((o,i)=>quests.push({id:'boss-'+i,name:'90-DAY BOSS — '+o,cat:'MISSION',xp:1000,tier:'boss',stats:['EXECUTION']}));
+  quests.push({id:'pq-env',name:'ENVIRONMENT RESET — before/after',cat:'Environment',xp:120,tier:'proof',stats:['DISCIPLINE']},{id:'pq-body',name:'BODY PROOF — post-session',cat:'Fitness',xp:100,tier:'proof',stats:['BODY']},{id:'pq-ship',name:'SHIP PROOF — it’s live',cat:'Build',xp:150,tier:'proof',stats:['EXECUTION']});
+  const push = tone==='Ranked Mode'?'Ranked Mode: the Council does not soften.':tone==='Gentle'?'Gentle: the Council reminds, never shames.':'Direct: the Council says it plainly.';
+  return {
+    meta:{name, title:'THE PLAYER', season:('SEASON · '+(a.season||'REBUILD')).toUpperCase(), level:1, xp:0, xpMax:1000, rank:'BRONZE III', shadowRank:'E-RANK', nextShadowRank:'D-RANK', shadowGate:'Rank gates are milestones, not XP: '+(builds[0]||'ship your first build')+'.', tone},
+    mainQuest:{name:('SEASON OF '+(a.season||'REBUILD')).toUpperCase(), sub:'Level 1 → Level 2', desc:outcomes.length?('90 days: '+outcomes.join(' · ')):'Make three things true in 90 days.'},
+    objectives90:outcomes.length?outcomes:['Define three outcomes'],
+    pillars:pillars.map(p=>p.toUpperCase()),
+    body:{arc:(a.body||'STRONGEST VERSION').split(/[.\n]/)[0].slice(0,40).toUpperCase(), minimums:mins.length?mins:['Train','Fuel','Steps','Sleep']},
+    life:{protected:a.life||'Protected time', note:''},
+    capital:{rule:a.capital||''},
+    baseline:{label:'DAY ONE', stats:{Discipline:5,Focus:5,Execution:5,Body:5,Recovery:5}},
+    liveStats:['BODY','DISCIPLINE','FOCUS','EXECUTION','RECOVERY','SKILL','CAPITAL','RELATIONSHIPS'],
+    quests, raids:{active:builds.map(b=>b.split(/—|-|:/)[0].trim()).filter(Boolean), next:[], sealed:[]},
+    council:[{key:'monarch',name,role:'THE PLAYER · decision-maker',quote:'I decide.',asset:''},{key:'igris',name:'THE KNIGHT',role:'BUILDER · execution',quote:'What must be executed?',strengths:'Execution · Focus · Depth',asset:''},{key:'chakra',name:'THE STRATEGIST',role:'STRATEGY · priorities',quote:'What is the highest-leverage move?',strengths:'Systems · Priorities · Synthesis',asset:''}],
+    week:a.week||'', debuffs:a.debuffs||[], push, xp:0,
+    completions:{}, xpLog:{}, journal:{}, orders:{}, proofs:{}, questsImported:false
+  };
+}
+$('#btn-summon').onclick=()=>{ const a=readIntake(); if(!a.name){ toast('The System needs a name'); return; } mode='template'; localStorage.setItem(KEY.mode,mode); $$('.mode button').forEach(x=>x.classList.toggle('on',x.dataset.mode===mode)); S=summon(a); save();
+  $('#summon-form').classList.add('hidden'); $('#summon-done').classList.remove('hidden'); const lines=['Season generated.','Main Quest generated.','Pillars generated.','Quest queue generated.','XP initialized.','Debuffs identified.','Council activated.', S.push]; const t=$('#ticker'); t.innerHTML=''; lines.forEach((l,i)=>setTimeout(()=>{ t.innerHTML+=l+'<br>'; }, 250*i)); };
+$('#btn-enter').onclick=()=>{ render(); go('cc'); };
+$('#btn-resummon').onclick=()=>{ $('#summon-form').classList.remove('hidden'); $('#summon-done').classList.add('hidden'); };
+function renderEmptyTemplate(){ $('#brand').innerHTML='THE SYSTEM<small>TEMPLATE · NOT YET SUMMONED</small>'; go('summon'); }
+
+/* ---------- nav / mode ---------- */
+function go(s){ $$('nav.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.s===s)); $$('section.screen').forEach(x=>x.classList.toggle('on',x.id==='s-'+s)); window.scrollTo({top:0}); }
+$$('nav.tabs button').forEach(b=>b.onclick=()=>{ if(!S&&b.dataset.s!=='summon'){ toast('Summon the System first'); go('summon'); return; } go(b.dataset.s); });
+$$('#qtabs button').forEach(b=>b.onclick=()=>{ $$('#qtabs button').forEach(x=>x.classList.toggle('on',x===b)); $$('#s-quests .pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+b.dataset.p)); });
+$$('.mode button').forEach(b=>b.onclick=()=>{ mode=b.dataset.mode; localStorage.setItem(KEY.mode,mode); $$('.mode button').forEach(x=>x.classList.toggle('on',x===b)); load(); if(S){ $('#summon-form').classList.remove('hidden'); $('#summon-done').classList.add('hidden'); render(); go('cc'); } else renderEmptyTemplate(); });
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeAttr(s){ return escapeHtml(s); }
+
+/* ---------- boot ---------- */
+async function boot(){
+const response = await fetch('profile/prat.json');
+if(response.ok) PRAT_SEED = await response.json();
+else if(response.status!==404) throw new Error('Could not load profile');
+const questResponse = await fetch('data/quests.smp.json');
+if(!questResponse.ok) throw new Error('Could not load SMP quests');
+const quests = await questResponse.json();
+if(PRAT_SEED){
+  PRAT_SEED.quests = PRAT_SEED.quests.filter(q=>q.tier!=='daily').concat(quests.map(q=>({...q,cat:q.category,tier:'daily',stats:[catStat(q.category)]})));
+  PRAT_SEED.questsImported = true;
+} else { mode='template'; }
+renderIntake();
+$$('.mode button').forEach(x=>x.classList.toggle('on',x.dataset.mode===mode));
+load();
+if(S){ render(); } else { renderEmptyTemplate(); }
+}
+boot().catch(err=>{ document.getElementById("brand").textContent="Life OS could not load"; toast(err.message); });
+</script>
+</body>
+</html>

@@ -22,6 +22,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
+from aiohttp import web
 
 # ── ENV ───────────────────────────────────────────────────────────────────────
 load_dotenv()
@@ -2129,6 +2130,321 @@ async def cmd_start(interaction: discord.Interaction):
 
 
 # ═════════════════════════════════════════════════════════════════════════════
+# DUAL TWO-WAY LISTENER — HTTP API (External ↔ Discord)
+# ═════════════════════════════════════════════════════════════════════════════
+# Direction 1: Discord → System  (handled by on_message / slash commands above)
+# Direction 2: System → Discord  (handled by aiohttp web server below)
+#
+# Any external agent (Chakra, Gemini/Beru, Codex, quest_api, iOS app, dashboard)
+# can POST to these endpoints to push messages/updates into Discord.
+# ═════════════════════════════════════════════════════════════════════════════
+
+API_PORT = int(os.getenv("API_PORT", 8080))
+
+AGENT_COLORS = {
+    "igris":  0x7C3AED,  # purple
+    "chakra": 0x10B981,  # green
+    "beru":   0x3B82F6,  # blue
+    "codex":  0xFBBF24,  # gold
+    "system": 0x06B6D4,  # cyan
+}
+
+
+async def api_health(request):
+    """GET / — Health check for uptime monitors."""
+    return web.json_response({
+        "status": "online",
+        "bot": str(bot.user) if bot.user else "connecting...",
+        "rank": load_state().get("rank", "Unknown"),
+        "total_xp": load_state().get("total_xp", 0),
+    })
+
+
+async def api_get_state(request):
+    """GET /api/state — Return current shadow state."""
+    state = load_state()
+    return web.json_response(state)
+
+
+async def api_post_message(request):
+    """POST /api/message — Send a plain or embed message to Discord.
+    Body: {
+        "content": "plain text message",          # optional
+        "agent": "chakra",                         # optional — wraps in agent-colored embed
+        "title": "Directive Update",               # optional — embed title
+        "description": "New sprint plan ready.",   # optional — embed body
+        "fields": [{"name":"k","value":"v"}]       # optional — embed fields
+    }
+    """
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid JSON"}, status=400)
+
+    ch = bot.get_channel(CHANNEL_ID)
+    if not ch:
+        return web.json_response({"error": "channel not found"}, status=503)
+
+    agent = data.get("agent", "system").lower()
+    content = data.get("content")
+
+    # If agent is specified, build an embed
+    if data.get("title") or data.get("description"):
+        color = AGENT_COLORS.get(agent, C_PURPLE)
+        embed = discord.Embed(
+            title=data.get("title", ""),
+            description=data.get("description", ""),
+            color=color,
+            timestamp=datetime.now(ET),
+        )
+        embed.set_author(
+            name=f"Agent {agent.title()}",
+            icon_url=AVATAR_URL,
+        )
+        for field in data.get("fields", []):
+            embed.add_field(
+                name=field.get("name", ""),
+                value=field.get("value", ""),
+                inline=field.get("inline", True),
+            )
+        embed.set_footer(text=f"TWO-WAY LISTENER  •  via {agent.upper()}")
+        await ch.send(content=content, embed=embed)
+    elif content:
+        await ch.send(content)
+    else:
+        return web.json_response({"error": "need 'content', 'title', or 'description'"}, status=400)
+
+    log.info(f"[API] Message sent to Discord from agent={agent}")
+    return web.json_response({"ok": True, "agent": agent})
+
+
+async def api_agent_update(request):
+    """POST /api/agent/update — Agent posts a structured status update.
+    Body: {
+        "agent": "chakra",
+        "status": "active",
+        "summary": "Expanded sprint to 5 questlines",
+        "tasks_completed": ["Bridge system", "Codex prompt"],
+        "next_actions": ["Deploy bot", "Scaffold iOS"],
+        "message_for_monarch": "The shadows grow stronger."
+    }
+    """
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid JSON"}, status=400)
+
+    ch = bot.get_channel(CHANNEL_ID)
+    if not ch:
+        return web.json_response({"error": "channel not found"}, status=503)
+
+    agent = data.get("agent", "unknown").lower()
+    color = AGENT_COLORS.get(agent, C_PURPLE)
+
+    embed = discord.Embed(
+        title=f"⚡ AGENT UPDATE — {agent.upper()}",
+        description=data.get("summary", "No summary provided."),
+        color=color,
+        timestamp=datetime.now(ET),
+    )
+    embed.set_author(name=f"Agent {agent.title()}", icon_url=AVATAR_URL)
+
+    if data.get("tasks_completed"):
+        completed = "\n".join(f"✅ {t}" for t in data["tasks_completed"])
+        embed.add_field(name="Completed", value=completed, inline=False)
+
+    if data.get("next_actions"):
+        actions = "\n".join(f"➡️ {a}" for a in data["next_actions"])
+        embed.add_field(name="Next Actions", value=actions, inline=False)
+
+    if data.get("message_for_monarch"):
+        embed.add_field(
+            name="Message for the Monarch",
+            value=f"*\"{data['message_for_monarch']}\"*",
+            inline=False,
+        )
+
+    embed.add_field(name="Status", value=data.get("status", "unknown").upper(), inline=True)
+    embed.set_footer(text="DUAL LISTENER  •  Agent Bridge Protocol")
+
+    await ch.send(embed=embed)
+
+    # Also log to agent_state/agent_activity_log.json
+    _log_agent_activity(agent, data)
+
+    log.info(f"[API] Agent update from {agent}: {data.get('summary', '')[:60]}")
+    return web.json_response({"ok": True, "agent": agent})
+
+
+async def api_quest_complete(request):
+    """POST /api/quest/complete — Complete a quest via API and notify Discord.
+    Body: { "quest_id": "gym", "source": "ios_app" }
+    """
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid JSON"}, status=400)
+
+    quest_id = data.get("quest_id", "")
+    source = data.get("source", "api")
+
+    state = load_state()
+    state, _ = maybe_reset(state)
+
+    quests_today = state.get("today", {}).get("quests", {})
+    if quest_id not in quests_today:
+        return web.json_response({"error": f"unknown quest: {quest_id}"}, status=400)
+
+    if quests_today[quest_id] == "complete":
+        return web.json_response({"ok": True, "message": "already complete",
+                                   "total_xp": state["total_xp"], "rank": state["rank"]})
+
+    # Find quest XP from registry
+    quest_meta = None
+    for q in (QUESTS if not is_weekend() else WEEKEND_QUESTS):
+        if q["id"] == quest_id:
+            quest_meta = q
+            break
+    if not quest_meta:
+        # Check surprise quests
+        return web.json_response({"error": f"no metadata for quest: {quest_id}"}, status=400)
+
+    xp_gained = quest_meta["xp"]
+    state["today"]["quests"][quest_id] = "complete"
+    state["total_xp"] = state.get("total_xp", 0) + xp_gained
+    old_rank = state["rank"]
+    state["rank"] = get_rank(state["total_xp"])["name"]
+    save_state(state)
+
+    # Notify Discord
+    ch = bot.get_channel(CHANNEL_ID)
+    if ch:
+        embed = discord.Embed(
+            title=f"⚔️ QUEST COMPLETE — {quest_meta['title']}",
+            description=quest_meta["description"],
+            color=C_GREEN,
+            timestamp=datetime.now(ET),
+        )
+        embed.add_field(name="XP Gained", value=f"+{xp_gained}", inline=True)
+        embed.add_field(name="Total XP", value=f"{state['total_xp']:,}", inline=True)
+        embed.add_field(name="Rank", value=state["rank"], inline=True)
+        embed.set_footer(text=f"Source: {source}  •  Two-Way Listener")
+        await ch.send(embed=embed)
+
+        # Check for rank up
+        if state["rank"] != old_rank:
+            rank_gif = RANK_UP_GIFS.get(state["rank"], "")
+            await ch.send(f"🎉 **RANK UP!** → **{state['rank']}**\n{rank_gif}")
+
+    log.info(f"[API] Quest complete: {quest_id} +{xp_gained}XP [source={source}]")
+    return web.json_response({
+        "ok": True,
+        "quest": quest_id,
+        "xp_gained": xp_gained,
+        "total_xp": state["total_xp"],
+        "rank": state["rank"],
+    })
+
+
+async def api_body_protocol(request):
+    """POST /api/body/log — Log Shadow Body Protocol data and update XP.
+    Body: {
+        "day": 4,
+        "grade": "B-",
+        "intake_cal": 1470,
+        "burn_cal": 3084,
+        "protein_g": 102,
+        "steps": 8100,
+        "training": "Heavy arms + back + chest",
+        "active_zone_min": 85
+    }
+    """
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid JSON"}, status=400)
+
+    # Calculate XP based on grade
+    grade_xp = {"A+": 200, "A": 175, "A-": 150, "B+": 125, "B": 100, "B-": 75,
+                "C+": 50, "C": 25, "C-": 10, "D": 0, "F": -50}
+    grade = data.get("grade", "C")
+    xp_earned = grade_xp.get(grade, 25)
+
+    state = load_state()
+    state["total_xp"] = state.get("total_xp", 0) + xp_earned
+    state["rank"] = get_rank(state["total_xp"])["name"]
+    save_state(state)
+
+    # Notify Discord
+    ch = bot.get_channel(CHANNEL_ID)
+    if ch:
+        protein_status = "✅" if data.get("protein_g", 0) >= 150 else "❌"
+        embed = discord.Embed(
+            title=f"🏋️ SHADOW BODY PROTOCOL — Day {data.get('day', '?')}",
+            description=f"Grade: **{grade}** | XP: **+{xp_earned}**",
+            color=C_GOLD,
+            timestamp=datetime.now(ET),
+        )
+        embed.add_field(name="Intake", value=f"{data.get('intake_cal', '?')} cal", inline=True)
+        embed.add_field(name="Burn", value=f"{data.get('burn_cal', '?')} cal", inline=True)
+        embed.add_field(name="Protein", value=f"{data.get('protein_g', '?')}g {protein_status}", inline=True)
+        embed.add_field(name="Steps", value=f"{data.get('steps', '?')}", inline=True)
+        embed.add_field(name="Training", value=data.get("training", "Rest day"), inline=True)
+        embed.add_field(name="AZM", value=f"{data.get('active_zone_min', 0)} min", inline=True)
+        embed.set_footer(text="Shadow Body Protocol  •  Two-Way Listener")
+        await ch.send(embed=embed)
+
+    log.info(f"[API] Body protocol day {data.get('day')}: grade={grade} +{xp_earned}XP")
+    return web.json_response({"ok": True, "xp_earned": xp_earned, "total_xp": state["total_xp"]})
+
+
+def _log_agent_activity(agent: str, data: dict):
+    """Append to agent_state/agent_activity_log.json."""
+    log_file = BASE_DIR / "agent_state" / "agent_activity_log.json"
+    try:
+        entries = json.loads(log_file.read_text(encoding="utf-8")) if log_file.exists() else []
+    except (json.JSONDecodeError, OSError):
+        entries = []
+
+    entries.append({
+        "id": len(entries) + 1,
+        "timestamp": datetime.now(ET).isoformat(),
+        "agent": agent.title(),
+        "platform": "Two-Way Listener API",
+        "type": "update",
+        "summary": data.get("summary", "No summary"),
+        "related_files": [],
+        "next_action": (data.get("next_actions") or [""])[0] if data.get("next_actions") else "",
+    })
+
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    log_file.write_text(json.dumps(entries, indent=2), encoding="utf-8")
+
+
+async def start_api_server():
+    """Start the aiohttp web server for the two-way listener."""
+    app = web.Application()
+    app.router.add_get("/", api_health)
+    app.router.add_get("/api/state", api_get_state)
+    app.router.add_post("/api/message", api_post_message)
+    app.router.add_post("/api/agent/update", api_agent_update)
+    app.router.add_post("/api/quest/complete", api_quest_complete)
+    app.router.add_post("/api/body/log", api_body_protocol)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", API_PORT)
+    await site.start()
+    log.info(f"[TWO-WAY LISTENER] HTTP API running on port {API_PORT}")
+    log.info(f"  GET  /                    → Health check")
+    log.info(f"  GET  /api/state           → Current shadow state")
+    log.info(f"  POST /api/message         → Send message to Discord")
+    log.info(f"  POST /api/agent/update    → Agent status update → Discord")
+    log.info(f"  POST /api/quest/complete  → Complete quest + notify Discord")
+    log.info(f"  POST /api/body/log        → Log body protocol + notify Discord")
+
+
+# ═════════════════════════════════════════════════════════════════════════════
 # ENTRY POINT
 # ═════════════════════════════════════════════════════════════════════════════
 
@@ -2144,5 +2460,17 @@ if __name__ == "__main__":
         print("  The bot will connect but won't post quest notifications.")
         print("  Add to your .env:  DISCORD_CHANNEL_ID=your_channel_id\n")
 
+    # Hook the two-way listener into the bot's setup
+    original_setup = bot.setup_hook
+
+    async def enhanced_setup():
+        await original_setup()
+        await start_api_server()
+        log.info("DUAL TWO-WAY LISTENER active — Discord ↔ HTTP API")
+
+    bot.setup_hook = enhanced_setup
+
     log.info("Starting Shadow Monarch Protocol...")
+    log.info(f"  Discord bot  →  listening for messages & slash commands")
+    log.info(f"  HTTP API     →  port {API_PORT} (Two-Way Listener)")
     bot.run(TOKEN, log_handler=None)

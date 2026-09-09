@@ -7,7 +7,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Create data directory
-RUN mkdir -p /app/data
+# Create data and agent_state directories
+RUN mkdir -p /app/data /app/agent_state
+
+# Expose the two-way listener API port
+EXPOSE 8080
 
 CMD ["python", "shadow_monarch_bot.py"]
