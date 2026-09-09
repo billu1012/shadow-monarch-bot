@@ -19,6 +19,7 @@ import logging
 import random
 import hashlib
 from datetime import datetime, timedelta
+from lifeos_bridge import append_event
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
@@ -1156,6 +1157,20 @@ class ShadowBot(commands.Bot):
             return
 
         text = message.content.strip().lower()
+
+        # Life OS has its own ledger; do not mutate the legacy 550 XP state.
+        if text.startswith("!done ") or text == "!done":
+            quest_id = text.partition(" ")[2].strip()
+            quest = ALL_QUEST_BY_ID.get(quest_id)
+            if not quest:
+                await message.reply("Usage: `!done <quest_id>` — e.g. `!done gym`.")
+                return
+            added = append_event(DATA_DIR / "lifeos-events.json", today_et(), quest_id, quest["xp"])
+            await message.reply(
+                f"Life OS: `{quest_id}` recorded (+{quest['xp']} XP). Import Discord events in Chronicle."
+                if added else f"Life OS: `{quest_id}` already recorded today."
+            )
+            return
 
         # ── status ───────────────────────────────────────────────────
         if text in ("status", "s", "stats"):

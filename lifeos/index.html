@@ -250,7 +250,7 @@ textarea{min-height:90px;resize:vertical}
     <div class="card"><div class="label">REFLECT · JOURNAL</div><textarea id="journal" placeholder="What moved today? What griefed the team?"></textarea><div class="row sp" style="margin-top:8px"><span class="muted small">Saved per day, in this browser.</span><button class="btn sm" id="btn-journal">SAVE</button></div></div>
     <div class="card"><div class="label">WEEKLY REVIEW</div><div id="ch-review" class="t2"></div></div>
   </div>
-  <div class="card" style="margin-top:12px"><div class="row sp"><div class="label">SYSTEM DATA</div><div class="row"><button class="btn sm" id="btn-export">EXPORT PROFILE</button><button class="btn sm" id="btn-import">IMPORT PROFILE</button><button class="btn sm" id="btn-reset">RESET SYSTEM</button></div></div><div class="muted small" style="margin-top:6px">Everything lives in this browser's storage. Export before switching devices. Nothing is sent anywhere.</div></div>
+  <div class="card" style="margin-top:12px"><div class="row sp"><div class="label">SYSTEM DATA</div><div class="row"><button class="btn sm" id="btn-export">EXPORT PROFILE</button><button class="btn sm" id="btn-import">IMPORT PROFILE</button><button class="btn sm" id="btn-import-discord">Import Discord events</button><button class="btn sm" id="btn-reset">RESET SYSTEM</button></div></div><div class="muted small" style="margin-top:6px">Everything lives in this browser's storage. Export before switching devices. Nothing is sent anywhere.</div></div>
 </section>
 
 <!-- ================= SUMMON (TEMPLATE) ================= -->
@@ -459,14 +459,45 @@ $('#btn-add-raid').onclick=()=>{ const v=prompt('Name the raid (project):'); if(
 /* ---------- import / export ---------- */
 function download(name,obj){ const a=document.createElement('a'); const url=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'})); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),30000); }
 $('#btn-export').onclick=()=>download(`${mode==='prat'?'prat':'system'}-profile-${todayKey()}.json`, S);
+function mergeDiscordEvents(events){
+  if(mode!=='prat') throw new Error('Switch to Monarch mode to import Discord events');
+  if(!Array.isArray(events)) throw new Error('Expected a Discord events JSON array');
+  const seen=new Map();
+  for(const e of events){
+    if(!e || !/^\d{4}-\d{2}-\d{2}$/.test(e.date) || !/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(e.questId) || !Number.isSafeInteger(e.xp) || e.xp<0) throw new Error('Invalid Discord event');
+    const date=new Date(e.date+'T00:00:00Z');
+    if(!Number.isFinite(date.getTime()) || date.toISOString().slice(0,10)!==e.date) throw new Error('Invalid event date');
+    const key=e.date+':'+e.questId;
+    if(seen.has(key)&&seen.get(key)!==e.xp) throw new Error('Conflicting duplicate Discord event');
+    seen.set(key,e.xp);
+  }
+  S.discordEvents=S.discordEvents||{};
+  let count=0,total=0;
+  for(const e of events){
+    const key=e.date+':'+e.questId;
+    if(Object.hasOwn(S.discordEvents,key)) continue;
+    S.discordEvents[key]=e.xp;
+    S.completions[e.date]=S.completions[e.date]||{};
+    if(S.completions[e.date][e.questId]) continue;
+    S.completions[e.date][e.questId]=Date.parse(e.date+'T12:00:00Z');
+    S.xpLog[e.date]=(S.xpLog[e.date]||0)+e.xp;
+    total+=e.xp;count++;
+  }
+  S.xp+=total;
+  while(S.xp>=S.meta.xpMax){ S.xp-=S.meta.xpMax;S.meta.level++;S.meta.xpMax=Math.round(S.meta.xpMax*1.15/100)*100; }
+  save();render();toast(`${count} Discord completions imported · +${total} XP`);
+  return {count,xp:total};
+}
 let jsonTarget=null;
 function pickJson(t){ jsonTarget=t; $('#file-json').value=''; $('#file-json').click(); }
+$('#btn-import-discord').onclick=()=>pickJson('discord');
 $('#btn-import').onclick=()=>pickJson('profile'); $('#btn-import-t').onclick=()=>pickJson('profile'); $('#btn-import-quests').onclick=()=>pickJson('quests');
 $('#file-json').onchange=e=>{ const f=e.target.files[0]; if(!f) return; f.text().then(t=>{ try{ const j=JSON.parse(t);
-  if(jsonTarget==='quests'){ const arr=Array.isArray(j)?j:(j.quests||[]); const norm=arr.map((q,i)=>({id:q.id||('smp-'+i), name:q.name||q.title||('Quest '+(i+1)), cat:q.category||q.cat||q.pillar||'Discipline', time:q.time||q.window||q.unlock||'', xp:+(q.xp||q.reward||50), tier:'daily', stats:q.stats||[catStat(q.category||q.cat||q.pillar)]}));
+  if(jsonTarget==='discord'){ mergeDiscordEvents(j); }
+  else if(jsonTarget==='quests'){ const arr=Array.isArray(j)?j:(j.quests||[]); const norm=arr.map((q,i)=>({id:q.id||('smp-'+i), name:q.name||q.title||('Quest '+(i+1)), cat:q.category||q.cat||q.pillar||'Discipline', time:q.time||q.window||q.unlock||'', xp:+(q.xp||q.reward||50), tier:'daily', stats:q.stats||[catStat(q.category||q.cat||q.pillar)]}));
     if(!norm.length){ toast('No quests found in file'); return; } S.quests=S.quests.filter(q=>q.tier!=='daily').concat(norm); S.questsImported=true; save(); render(); toast(`${norm.length} quests imported`); }
   else { if(!j.meta||!j.quests){ toast('Not a Life OS profile'); return; } S=j; save(); render(); toast('Profile restored'); go('cc'); }
- }catch(err){ toast('Invalid JSON'); } }); };
+ }catch(err){ toast(err.message||'Invalid JSON'); } }); };
 function catStat(c=''){ c=c.toLowerCase(); return c.includes('fit')?'BODY':c.includes('nutri')?'BODY':c.includes('focus')?'FOCUS':c.includes('disc')?'DISCIPLINE':'EXECUTION'; }
 $('#btn-reset').onclick=()=>{ if(confirm('Reset the System? This wipes this browser\'s data for the current mode. Export first.')){ localStorage.removeItem(mode==='prat'?KEY.prat:KEY.template); load(); render(); toast('System reset'); } };
 

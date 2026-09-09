@@ -26,3 +26,11 @@ Run `node docs/test-lifeos.cjs` from the repository root. It checks the app stat
 Desktop browser: Level 26, 6,850/12,000, portrait, and no console errors verified. Template Summon and refresh verified at 390px phone viewport. Physical phone testing remains pending. Embedded-browser download events timed out, so the browser export/reset/import round-trip remains unverified; the state-handler round-trip passes.
 
 The original nested j checkout remains in place and ignored. Its full Git history and working files are preserved under docs/legacy-j. The Windows-reserved nul file is preserved as docs/legacy-j/legacy-nul.txt.
+
+## Discord bridge
+
+In the configured Discord quest channel, `!done gym` (or another quest ID) records `{date,questId,xp}` in the bot host's `data/lifeos-events.json`. Dates use America/New_York. This command writes only the Life OS ledger; it does not alter shadow_state.json or merge its 550 XP legacy total. Existing legacy commands keep their existing behavior.
+
+Copy/download that ledger from the bot host, then choose Chronicle → System Data → Import Discord events in Monarch mode and select the JSON file. This works on the static deployment without exposing the bot data endpoint. Import deduplicates by date + questId, including repeats across separate imports; already completed app quests receive no extra XP. Invalid files are rejected before modifying state. Exported profiles retain the dedupe history. Restart the bot with the updated code to activate the command; keep the ledger on persistent storage on hosted bot deployments.
+
+The public site has a public initial profile JSON when provisioned through PRAT_PROFILE_JSON. Git-ignore protects repository history, not the served static file. New completions, journal entries, and proofs remain in each browser unless exported.
