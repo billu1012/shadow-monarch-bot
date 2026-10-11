@@ -187,6 +187,8 @@ svg.leads { transition: opacity 1s; }
   .cin-side { top: auto; left: 0; width: 100%; height: 64dvh; border-left: 0; border-top: 1px solid var(--border-hi); border-radius: 16px 16px 0 0; transform: translateY(102%); }
   .cinema.drawer .cin-side { box-shadow: 0 -30px 60px rgba(0, 0, 0, 0.6); }
   .cinema.drawer .cin-drawer-btn { right: 12px; }
+  .cinema.drawer .cin-core .stagewrap { bottom: 64dvh; transition: bottom 0.45s; }
+  .cinema.drawer .cin-stage-row { display: none; }
   .now { padding: 14px 16px 12px; }
   .now h2 { font-size: 1.35rem; }
   .cin-stage-row span { font-size: 10px; padding: 4px 0; }
@@ -302,7 +304,7 @@ pre.code .caret { display: inline-block; width: 8px; height: 15px; background: #
 
 <div class="app" id="app">
   <header class="head">
-    <div class="brand"><i aria-hidden="true">⚔</i>IGRIS <span>Shadow Core</span></div>
+    <button class="brand" data-d="northstar" type="button"><i aria-hidden="true">⚔</i>IGRIS <span>Shadow Core</span></button>
     <div class="clock"><button class="fs-btn" id="fsOpen" type="button" aria-label="Open full screen">⛶ Full screen</button><span class="live">LIVE</span><div class="num"><span id="date">—</span><small id="time">—</small></div></div>
   </header>
 
@@ -311,16 +313,16 @@ pre.code .caret { display: inline-block; width: 8px; height: 15px; background: #
   <section class="main">
     <div class="col" id="left">
       <div class="panel tap" data-d="projects" role="button" tabindex="0"><span class="more">⤢</span>
-        <div class="ttl"><h2>Projects</h2><small>6 of 25</small></div>
+        <div class="ttl"><h2>Projects</h2><small>6 of 10</small></div>
         <div class="plist" id="plist"></div>
       </div>
-      <button class="panel tap" data-d="rank"><span class="more">⤢</span>
-        <div class="ttl"><h2>Rank</h2><small>Apr 3 log</small></div>
-        <div class="bigline"><span class="big">A</span><span class="label">2,395 / 2,800 XP</span></div>
-        <svg class="chart" id="rankChart" viewBox="0 0 220 64" role="img" aria-label="Rank ladder E to S, at A"></svg>
+      <button class="panel tap" data-d="level"><span class="more">⤢</span>
+        <div class="ttl"><h2>Level</h2><small>Life OS · Aug</small></div>
+        <div class="bigline"><span class="big">27</span><span class="label">up from 26</span></div>
+        <p style="margin:6px 0 0;font-size:14px;color:var(--text-muted)">Last Shadow Monarch rank on record: A, 2,395 XP (Apr 3). Current XP isn't tracked yet.</p>
       </button>
       <button class="panel tap" data-d="quests"><span class="more">⤢</span>
-        <div class="ttl"><h2>Quest map</h2><small>26 daily</small></div>
+        <div class="ttl"><h2>Quest map</h2><small>Mar schedule · verify</small></div>
         <div class="bigline"><span class="big num" id="qxp">1,680</span><span class="label">XP / day</span></div>
         <svg class="chart" id="questChart" viewBox="0 0 220 96" role="img" aria-label="Quest XP across the day by category"></svg>
         <div class="legend" id="questLegend"></div>
@@ -361,8 +363,9 @@ pre.code .caret { display: inline-block; width: 8px; height: 15px; background: #
         <div class="gstats"><div data-k="MET">0</div><div data-k="NEED">8</div><div data-k="OCT 30" id="tminus">—</div></div>
       </button>
       <button class="panel tap" data-d="rhythm"><span class="more">⤢</span>
-        <div class="ttl"><h2>Build rhythm</h2><small>planned min</small></div>
+        <div class="ttl"><h2>Week rhythm</h2><small>to Oct 30</small></div>
         <div class="hm" id="hm"></div>
+        <div class="legend" id="hmLegend"></div>
       </button>
     </div>
   </section>
@@ -371,7 +374,7 @@ pre.code .caret { display: inline-block; width: 8px; height: 15px; background: #
 
   <section class="lower">
     <div class="panel"><div class="tabs" id="tabs"></div><div class="codebox"><pre class="code" id="code"></pre></div></div>
-    <div class="panel"><div class="tabs"><b>LIVE LOG</b><span>from your drafts</span><span class="lv">live</span></div><div class="log" id="log"></div></div>
+    <div class="panel"><div class="tabs"><b>LIVE LOG</b><span>Jul → Oct 11</span><span class="lv">live</span></div><div class="log" id="log"></div></div>
   </section>
 
   <div class="progress"><i id="prog"></i></div>
@@ -411,13 +414,20 @@ const QUESTS = [["SYSTEM BOOT",50,"Discipline","06:00"],["BODY ACTIVATION",75,"F
 const CAT = { Discipline: 'var(--series-1)', Fitness: 'var(--series-2)', Nutrition: 'var(--series-3)', Focus: 'var(--series-4)' };
 const CATS = Object.keys(CAT);
 
+const STATUS = { Building: 'var(--warning)', Pilot: 'var(--serious)', Blocked: 'var(--critical)', Paused: 'var(--text-muted)', Live: 'var(--good)', Shipped: 'var(--good)' };
 const PROJECTS = [
-  { k: 'p-otherside', name: 'The Other Side', sub: 'ECHO · Lane B', c: 'var(--series-1)', st: ['To deploy', 'var(--warning)'] },
-  { k: 'p-elevate', name: 'ELEVATE', sub: 'blueprint inference', c: 'var(--series-2)', st: ['Pilot', 'var(--serious)'] },
-  { k: 'p-radar', name: 'Acquisition Radar', sub: '358 → 7', c: 'var(--series-3)', st: ['Live', 'var(--good)'] },
-  { k: 'p-smp', name: 'Shadow Monarch', sub: 'PWA · Discord', c: 'var(--series-4)', st: ['Live', 'var(--good)'] },
-  { k: 'p-body', name: 'Body Chronicle', sub: 'protein ring', c: 'var(--series-5)', st: ['Live', 'var(--good)'] },
-  { k: 'p-comps', name: 'Comps Database', sub: 'Excel · KML · Dealpath', c: 'var(--series-6)', st: ['Building', 'var(--warning)'] },
+  { k: 'p-otherside', name: 'The Other Side', sub: 'ECHO · Renée · hackathon', c: 'var(--series-1)', st: 'Building' },
+  { k: 'p-radar', name: 'Capital Markets Radar', sub: 'S. FL · NNJ · Lehigh', c: 'var(--series-2)', st: 'Building' },
+  { k: 'p-nnj', name: 'NNJ Radar', sub: 'final 3 + 3 pending', c: 'var(--series-3)', st: 'Building' },
+  { k: 'p-town', name: 'Town Watch', sub: 'CEO ask · v3.1', c: 'var(--series-4)', st: 'Pilot' },
+  { k: 'p-elevate', name: 'Inference engine', sub: 'ELEVATE + Pascal fork', c: 'var(--series-5)', st: 'Building' },
+  { k: 'factory', name: 'Agent Factory', sub: '4 departments', c: 'var(--series-6)', st: 'Building' },
+];
+const MORE_PROJECTS = [
+  { k: 'p-nightly', name: 'Prat Nightly (ARISE)', sub: 'v3.2 · Sep 29', st: 'Building' },
+  { k: 'p-ember', name: 'Ember', sub: 'moved to Mac/Xcode', st: 'Blocked' },
+  { k: 'p-orion', name: 'Orion → Power BI', sub: 'before Yardi drops it', st: 'Building' },
+  { k: 'p-casley', name: 'Casley LLC', sub: 'not filed yet', st: 'Paused' },
 ];
 
 const DEPTS = [
@@ -439,133 +449,151 @@ const STAGES = [
 const GATE = ['SwiftUI MVP created', 'Create a focus quest (title, duration, reminder)', 'Local notifications, system-alert style', 'Focus session with countdown', 'Complete a session and award XP', 'S-Rank Gate progress screen', 'Code committed to the repo', 'Demo recorded or screenshots captured'];
 
 // planned minutes per weekday from the lane system: Mon–Fri 30, Sat 180, Sun 15
-const RHYTHM = [30, 30, 30, 30, 30, 180, 15];
+
 
 /* ---------------- detail cards ---------------- */
+const GUARD = 'The play lane is closed until Jan 1, but on Oct 11 alone you started three new projects: Agent Factory, the Pascal fork and the KH × Zelda repo. Your one hard deadline is Oct 30. Guard the hackathon and your 23:30 bedtime before saying yes to anything shiny.';
 const D = {
+  northstar: {
+    eb: 'North star', t: 'Prat · PRAT.EXE', lede: '“I don’t chase money. I build systems that buy me freedom to solve interesting problems with interesting people.”',
+    h: 'Creed (Aug 2026)', l: ['Health to live.', 'Wealth to give.', 'Time to create.', 'Love to keep.', 'Freedom to explore.'],
+    m: [['Woodmont', 'BI Solutions & Technology Analyst'], ['AI Task Force', 'you lead it'], ['Director', 'of AI & BI, next']],
+    next: 'Casley LLC is the company you want to ship under. It isn’t filed yet: NJ certificate, $100, then $75 a year.',
+    src: 'Memory export, Oct 11. Whether the creed changed since Aug is unconfirmed.'
+  },
   laneA: {
-    eb: 'Lane A', t: 'Director of AI & BI', lede: 'The case for Director at Woodmont, built toward a Q4 conversation. Your edge is rare: CRE business context, the enterprise data stack and AI tooling, all in one head.',
-    m: [['Q4 2026', 'conversation target'], ['15', 'agents in your factory'], ['358 → 7', 'radar funnel'], ['Aug 2026', 'website shipped w/ CEO']],
-    viz: 'funnel',
-    h: 'Proof you already have', l: ['Agent Factory: a 15-agent org with gated shipping, a launch review and postmortems', 'Acquisition Radar for the President and VP: 358 screened → 51 verified → 27 shortlist → 7 in the field', 'Woodmont website rebuild, shipped with the CEO in Aug 2026', 'You lead the internal AI Task Force', 'Yardi Support and Triage agents (user error vs system error)', 'Comps Database automation, Industrial News Briefing, Weekly Command Center'],
-    next: 'Write the one-page Director case: the problem, what you built, hours saved, and what you would run next quarter. Use Agent Factory and the Radar as the two headline proofs.',
-    src: 'From your profile and the Agent Factory page.'
+    eb: 'Lane A', t: 'Director of AI & BI', lede: 'Woodmont data, tickets, coworkers and work hours, merged into your work Command Center. The target is a Director conversation in Q4, taken slowly.',
+    m: [['By Dec 31', 'Director conversation'], ['Aug 13', '“define the path” pitched'], ['4', 'leadership asks waiting']],
+    h: 'Shipped proof', l: ['Website on WordPress (Aug); the new site is in staging', 'Invoice compliance agent', 'WPB / Mangonia screening deck and the 51-site list (Sep 11)', 'Industrial briefing rebuild, signed off by its reviewer (Aug)', 'Capital Markets VP set up on Claude (Aug 26)', 'You lead the AI Task Force; NAIOP NJ committee route (Aug)'],
+    viz: 'waiting',
+    next: 'Turn the shipped list above into the one-page Director case: problem, what you built, hours saved, what you would run next.',
+    src: 'Memory export, Oct 11. Outcome of the Aug 13 pitch is unconfirmed.'
   },
   drafts: {
-    eb: 'Memory', t: 'How I remember you', lede: "I don't keep our chats between sessions. I rebuild you every time from what you leave behind: your repos and your Gmail drafts, where Chakra and I pass the work.",
-    m: [['0', 'chat memory'], ['2', 'repos I read today'], ['May 8', 'first Igris ↔ Chakra handoff'], ['Oct 11', 'latest debrief draft']],
-    h: 'What the drafts hold', l: ['Apr 3: the A-Rank jump, +1,345 XP in one session', 'May 7: Shadow Body Protocol Day 4, 102 g protein against a 150 g floor', 'May 8–9: the Chakra Link went live; Oracle ARM verified', 'May 15: the ASCENDED dashboard and a million-dollar pipeline with 12 programs', 'Oct 2: the ECHO relay to ChatGPT', 'Oct 11: today’s session debrief'],
-    next: 'Keep ending sessions with a debrief draft. It is the only memory that survives.',
-    src: 'From your Gmail drafts and billu1012/shadow-monarch-bot.'
+    eb: 'Memory', t: 'How I remember you', lede: "I don't keep our chats between sessions. This version was rebuilt from your memory export on Oct 11. The older Gmail drafts are kept as history only.",
+    m: [['0', 'chat memory'], ['Oct 11', 'memory export'], ['2', 'repos I read']],
+    h: 'One thing I should know', l: [GUARD],
+    next: 'Re-run the memory prompt every few weeks so this stays true.',
+    src: 'Sources: the memory export (current), billu1012/shadow-monarch-bot and prcasley/future-self (code), Gmail drafts (history).'
   },
   gate: {
-    eb: 'S-Rank', t: 'The gate is locked', lede: 'XP alone cannot open it. To unlock S-Rank you have to ship the iOS Focus Remind app MVP in Swift/SwiftUI, and run and demo it yourself.',
-    m: [['0 / 8', 'conditions met'], ['2,395', 'XP (A-Rank)'], ['No shortcuts', 'sync and polish don’t count']],
+    eb: 'S-Rank', t: 'The gate, as last recorded', lede: 'Your Shadow Monarch repo defines the gate: XP alone cannot open S-Rank, you have to ship the iOS Focus Remind app MVP in SwiftUI and demo it yourself. It hasn’t been tracked since spring, so 0 of 8 is the last recorded state.',
+    m: [['0 / 8', 'last recorded'], ['Spring', 'last updated']],
     viz: 'checklist',
-    next: 'Condition 1: create the SwiftUI project and get one screen on your phone. That alone moves the gate.',
-    src: 'From docs/S_RANK_GATE.md.'
+    next: 'After Oct 30, decide whether this gate still matters or retire it.',
+    src: 'docs/S_RANK_GATE.md. Your memory export has no record of it.'
   },
   projects: {
-    eb: 'Projects', t: 'Six on the board', lede: 'You run about 25 projects. These six matter most right now; tap any row on the dashboard for its card.',
+    eb: 'Projects', t: 'Ten on the board', lede: 'Six in focus on the dashboard, four more below. Tap any row on the dashboard for its card.',
     viz: 'projects',
-    next: 'The play lane is frozen until Jan 1, 2027. New ideas go on a list, not into a repo.',
-    src: 'From your profile.'
+    next: GUARD,
+    src: 'Memory export, Oct 11.'
   },
   'p-otherside': {
-    eb: 'Lane B · Hackathon', t: 'The Other Side · ECHO', lede: 'A voice-first future-self AI. Tell ECHO who you want to be; it builds daily missions and lets you cross into four simulated futures, where a portrait of future you talks back.',
-    m: [[() => 'T-' + daysLeft(), 'days to Oct 30'], ['123 + 51', 'tests passing'], ['Go*', 'launch review'], ['Dec 15', 'judges until']],
-    h: 'Done today', l: ['main now holds the full app (it was the stub)', 'Hardening: voice cap, per-IP rate limit, no 4xx retries, key required', 'Cap lockout fixed: judges get a limited session, not a dead app', 'Your AI portrait is the stand-in face'],
-    next: 'Deploy main to Railway. You rotate the Nebius key and set the judge password. Then record the video under 3 minutes.',
-    src: 'prcasley/future-self @ bcbf268. *Go with conditions.'
-  },
-  'p-elevate': {
-    eb: 'CRE thesis', t: 'ELEVATE', lede: 'Your construction and civil blueprint inference engine. A rendering or elevation costs $10–40k; that cost is the target. It started as the CEO’s own ask around 2025.',
-    m: [['$10–40k', 'per rendering today'], ['Pilot', 'photos → elevations (Gemini)']],
-    next: 'Run the launch-review and cost-per-inference method from today on the elevation pilot before you show the CEO.',
-    src: 'From your profile. Nothing in this session touched ELEVATE.'
+    eb: 'Lane B · Hackathon', t: 'The Other Side · ECHO', lede: 'A voice-first future-self AI. ECHO speaks with the voice Renée; the Pepper’s ghost look is locked (Oct 11). It gets 20+ hours a week until Oct 30.',
+    m: [[() => 'T-' + daysLeft(), 'days to Oct 30'], ['Oct 29', 'voice, memory, missions'], ['123 + 51', 'tests passing'], ['Go*', 'launch review']],
+    h: 'Left before you submit', l: ['Reliable voice, memory and adaptive missions by Oct 29 (you, Codex and me)', 'Deploy main to Railway (you rotate the key, set the judge password)', 'Record the demo video, under 3 minutes', 'Check Nebius credits last to Dec 15', 'Make the Devpost claims match what is real'],
+    next: 'Submit by Oct 30, 10:00 AM PT.',
+    src: 'Memory export + prcasley/future-self @ bcbf268. *Go with conditions.'
   },
   'p-radar': {
-    eb: 'Capital Markets', t: 'Acquisition Radar', lede: 'AI-filtered industrial land screening for the President and VP, across Florida and Northern New Jersey, expanding into Pennsylvania.',
-    viz: 'funnel',
-    next: 'Each of the 7 in field review needs an owner and a decision date.',
-    src: 'From your profile.'
+    eb: 'Capital Markets · work', t: 'Capital Markets Radar', lede: 'Acquisition screening for the President and VP across South Florida, Northern New Jersey and the Lehigh Valley. IT rejected SharePoint/Azure hosting on Sep 28, so Radar 2.0 wires the HTML app to an Excel master in a synced SharePoint folder.',
+    viz: 'fl',
+    h: 'Where it stands', l: ['Mangonia closed Sep 23 after field review cut the active set to 7 sites (39.90 ac)', 'Lake Worth campaign started', 'Lehigh Valley expansion', 'WPB Phase 2D outputs frozen'],
+    next: 'Radar 2.0: the Excel master in the synced SharePoint folder.',
+    src: 'Memory export, Oct 11.'
   },
-  'p-smp': {
-    eb: 'Personal OS', t: 'Shadow Monarch Protocol', lede: 'A Solo Leveling productivity system: 26 time-locked daily quests, a React/Vite PWA with an Express backend on Railway, a Discord bot and iMessage one-tap completion.',
-    m: [['26', 'daily quests'], ['1,680', 'XP available / day'], ['06:00', 'SYSTEM BOOT']],
-    viz: 'cats',
-    next: 'Ascend is the productized version with HealthKit verification.',
-    src: 'From lifeos/data/quests.smp.json in this repo.'
+  'p-nnj': {
+    eb: 'Capital Markets · work', t: 'NNJ Acquisition Radar', lede: 'Perth Amboy, Edison, Elmwood Park, North Bergen and Secaucus. Phase 1 screened 787 parcels; Track A named 12 North Bergen and 10 Secaucus semifinalists.',
+    viz: 'nnj',
+    next: 'Agree the final 3 North Bergen + 3 Secaucus with the reviewer.',
+    src: 'Memory export: Phase 1 Sep 15, Track A Sep 18.'
   },
+  'p-town': {
+    eb: 'CEO ask · work', t: 'Town Watch', lede: 'A monitor for press, municipal records and data-center pushback. Pilot v3.1 ran Oct 5; collection isn’t automated yet.',
+    m: [['v3.1', 'pilot · Oct 5'], ['CEO', 'is waiting on it']],
+    next: 'Confirm the seed towns, then automate collection.',
+    src: 'Memory export, Oct 11.'
+  },
+  'p-elevate': {
+    eb: 'CRE thesis', t: 'Inference engine', lede: 'Blueprint and elevation AI: ELEVATE plus a fork of Pascal Editor (prcasley/editor, Oct 11). A rendering or elevation costs $10–40k; that cost is the target. Codex has owned ELEVATE since Sep 6.',
+    m: [['Oct 11', 'Pascal Editor forked'], ['$10–40k', 'per rendering today'], ['Jul 22', 'elevation pilot phase 1']],
+    next: 'Photo-to-building import. It’s a play-lane start, so after Oct 30.',
+    src: 'Memory export. The elevation pilot’s status since Jul is unconfirmed.'
+  },
+  'p-nightly': { eb: 'Personal', t: 'Prat Nightly (ARISE)', lede: 'Your nightly mission app, with you as the character. v3.2 shipped Sep 29. Logic now covers sleep, post-gym, office vs home day and energy.', next: 'Remove the purple haze and make the spire realistic; the Unity stage is pending.', src: 'Memory export.' },
+  'p-ember': { eb: 'Personal', t: 'Ember', lede: 'A smoke-break simulator for public release. The Unity build was blocked on a license (Sep 14), so it moved to Mac/Xcode on Oct 7.', next: 'Build it out with real vapes and cigs once the Unity license or the Xcode build is settled.', src: 'Memory export.' },
+  'p-orion': { eb: 'Work', t: 'Orion → Power BI', lede: 'Replacing Orion before Yardi drops support. The known-issues doc went to your manager on Aug 3: 4 broken widgets, 5 suspicious.', next: 'Next step not on record. Worth naming one.', src: 'Memory export.' },
+  'p-casley': { eb: 'Company', t: 'Casley LLC', lede: 'The entity you want to ship products under. Nothing filed yet.', m: [['$100', 'NJ certificate'], ['$75 / yr', 'after that']], next: 'File the NJ certificate when a product is ready to sell.', src: 'Memory export, Sep 14.' },
+  'p-comps': { eb: 'Work', t: 'Comps Phase 2', lede: 'Comps is turning from a pure comps tool into an acquisition-radar agent.', next: 'Blocked on the Capital Markets VP’s inputs.', src: 'Memory export.' },
   'p-body': {
-    eb: 'Shadow Body Protocol', t: 'Body Chronicle', lede: 'A matte-black fitness dashboard with a protein ring, one-tap meal logging and Power BI. The Day 4 log found the one bottleneck: protein density.',
-    m: [['150 g', 'protein floor'], ['112 g', '4-day average'], ['4–5×', 'lifts per week']],
-    viz: 'protein',
-    next: 'Front-load protein at breakfast. 4 eggs beat avocado toast.',
-    src: 'From the May 7 Day 4 log in your drafts.'
+    eb: 'Body', t: 'V-taper recomp', lede: 'A 6-month cut that started in July, targeting about 172–176 lbs. You dropped under 200 in July. Lifting stays above every lane.',
+    m: [['172–176', 'target lbs'], ['180 g', 'protein / day'], ['4–5×', 'lifts / week'], ['8–10k', 'real steps / day']],
+    h: 'Program', l: ['Walking plus lifting 4–5 days a week: calisthenics (pull-ups, dips), max-incline walks, compound lifts', 'Sauna first, then the incline walk, for heat conditioning', 'Fitbit is daytime only now; sleep and resting heart rate improved', 'Considering Mentzer-style 2–3×/week plus 30–60 min jogs (not confirmed)'],
+    next: 'Log a current weight so the cut has a real number.',
+    src: 'Memory export. Latest weight unconfirmed.'
   },
-  'p-comps': {
-    eb: 'Industrial', t: 'Comps Database', lede: 'Automating the industrial comps: the master Excel, KML map layers and the weekly Dealpath export, kept in sync without hand-copying.',
-    next: 'Pick one weekly export and make it hands-free end to end first.',
-    src: 'From your profile.'
-  },
-  rank: {
-    eb: 'Rank', t: 'A-Rank · 2,395 XP', lede: 'On Apr 3 you jumped from B to A in one session: +1,345 XP, including 10 projects in a week. I also logged −300 for zero gym sessions that week.',
-    m: [['2,395', 'XP'], ['405', 'to the S threshold'], ['0 / 8', 'gate conditions']],
+  level: {
+    eb: 'Progress', t: 'Life OS level 27', lede: 'Prat Life OS moved from level 26 to 27 in August. Discord-bot XP history is meant to count in the consolidated app (Sep).',
+    m: [['27', 'Life OS level'], ['A · 2,395', 'last SMP rank (Apr 3)']],
     viz: 'ladder',
-    next: 'Even at 2,800 XP, S stays locked until the gate opens.',
-    src: 'From the Apr 3 quest-log draft.'
+    next: 'Current Shadow Monarch rank and XP aren’t tracked. Wire the consolidated app to show them.',
+    src: 'Memory export + the Apr 3 quest log (history).'
   },
   quests: {
-    eb: 'Daily quests', t: '26 quests, 1,680 XP a day', lede: 'From SYSTEM BOOT at 06:00 to SHADOW SLEEP at 23:00. Bars show XP by time of day, colored by category.',
+    eb: 'Daily quests', t: 'The March quest schedule', lede: 'These 26 quests, 06:00 to 23:00, are from the Shadow Monarch app as of March. Whether you still follow them is unconfirmed, so verify the times before trusting them.',
     viz: 'cats',
-    next: 'SHADOW RAID (gym, 200) and SHADOW SLEEP (200) are a quarter of the day’s XP between them.',
-    src: 'From lifeos/data/quests.smp.json.'
+    h: 'Changed since', l: ['Sleep target ~23:30, and sleep is the top priority (Sep)', 'Gym in the evening: the gym closes at 20:00, sauna at 19:30', 'Office Mon/Wed/Fri, driving 7–8 AM and 5–6:30 PM; Tue/Thu are open days', 'Added: AI Lab (try one new AI tool a day), Body Chronicle journal XP, park walk with Mom when you get home, Wim Hof breathing'],
+    src: 'quests.smp.json and App.jsx (March); changes from the memory export.'
   },
   rhythm: {
-    eb: 'Lane system', t: 'Build rhythm', lede: 'Your planned build time for the rest of 2026: 30 minutes before work Monday to Friday, a 3-hour block on Saturday and a 15-minute review on Sunday.',
-    m: [['345', 'planned min / week'], ['3 h', 'Saturday block'], ['Jan 1', 'play lane unfreezes']],
-    viz: 'rhythm',
-    next: 'This is the plan, not a log. Wire quest completions in to show actuals.',
-    src: 'From your profile.'
+    eb: 'Your week', t: 'Week rhythm to Oct 30', lede: 'Office Mon/Wed/Fri with the drive 7–8 AM and 5–6:30 PM. Tuesday and Thursday are open days. Gym in the evening (closes 20:00, sauna 19:30). Sleep target 23:30.',
+    viz: 'week',
+    next: 'Open days are the hackathon build days. Protect Tue and Thu.',
+    src: 'Memory export. Whether the old Sat 3-hour build block carried over is unconfirmed.'
   },
   factory: {
-    eb: 'Agent Factory', t: 'Your 15-agent company', lede: 'Run like a big tech company: specs before code, every change reviewed, privacy and launch reviews before anything ships. You are CEO; my session is the engineering manager.',
-    m: [['15', 'agents'], ['4', 'departments'], ['8', 'commands'], ['3', 'gates before launch']],
+    eb: 'Agent Factory', t: 'Your 15-agent company', lede: 'A Meta-style org of Claude Code agents: specs before code, every change reviewed, privacy and launch reviews before anything ships. You are CEO; my session is the engineering manager. Repo created Oct 11.',
+    m: [['15', 'agents'], ['4', 'departments'], ['8', 'commands'], ['Oct 11', 'repo created']],
     viz: 'factory',
-    h: 'House rules', l: ['Agents never push, deploy, delete, spend or message anyone without you', 'Every change ships with a Summary and a Test Plan', 'Nothing mocked is shown as live'],
-    next: 'Push prcasley/agent-factory to GitHub so the install line works.',
-    src: 'From your Agent Factory page. 5 of 5 board tests pass.'
+    next: 'Settle which GitHub account owns it, then staff the departments. It’s a play-lane start, so after Oct 30.',
+    src: 'Agent Factory page + memory export.'
   },
   council: {
-    eb: 'The Council', t: 'Who does what', lede: 'ChatGPT picks, I spec, Codex builds, I triple-check, you ship.',
-    h: 'The cast', l: ['CHAKRA (ChatGPT): The Strategist, picks ideas and advises', 'IGRIS (me, Claude): project manager, documenter, memory', 'CODEX: the builder on your Windows PC', 'BERU: the shadow soldier, scouts research', 'Gemini, the Infinite Dragon; Coach GPT, the Guardian Dragon'],
-    src: 'From your profile.'
+    eb: 'The Council', t: 'Who does what now', lede: 'ChatGPT picks, I spec, Codex builds, I check, you ship.',
+    h: 'The cast', l: ['IGRIS (me, Claude): Shadow Knight. Planner and spec writer, PM on Nightly, QA on Codex output, The Other Side build lead', 'CHAKRA (ChatGPT): The Strategist, named Sep 9 (formerly Astra). Hackathon schedule co-lead since Oct 2', 'CODEX: the builder. Owns ELEVATE since Sep 6, builds Nightly, built ECHO’s voice base', 'GEMINI, the Infinite Dragon, through Antigravity: Seatback Arcade, Casley Aura, and The Other Side with Codex', 'ECHO: the AI character inside The Other Side', 'Coach GPT (Guardian Dragon) and Beru: no current role on record'],
+    src: 'Memory export, Oct 11.'
   },
-  'k-boot': { eb: 'Discipline', t: 'SYSTEM BOOT · 06:00', lede: 'The first of 26 quests, 50 XP. Everything else unlocks after it.', src: 'quests.smp.json' },
-  'k-lifts': { eb: 'Non-negotiable', t: '4–5 lifts a week', lede: 'Training is the one thing that never moves. On the quest map it is SHADOW RAID, 200 XP, at 20:00.', m: [['200', 'XP per raid'], ['−300', 'week with zero gym (Apr)']] },
-  'k-frozen': { eb: 'Lane system', t: 'Play lane: frozen', lede: 'Everything outside Lane A (Director) and Lane B (The Other Side) is frozen to new additions until Jan 1, 2027.', next: 'New ideas go on a list. Ember, Virtual Fridge and the rest wait.' },
-  'k-tests': { alias: 'p-otherside' },
+  'k-sleep': { eb: 'Top priority', t: 'Sleep target 23:30', lede: 'You named sleep your top priority in September. The gym closes at 20:00, so evenings end early enough to protect it.', next: GUARD },
+  'k-protein': { alias: 'p-body' },
+  'k-lifts': { eb: 'Above every lane', t: '4–5 lifts a week', lede: 'Lifting sits above all lanes. Calisthenics, max-incline walks and compound lifts, with the sauna first.', m: [['4–5×', 'per week'], ['20:00', 'gym closes']] },
+  'k-frozen': { eb: 'Lane system', t: 'Play lane: closed', lede: 'Everything outside Lane A and Lane B is closed to new additions until Jan 1, 2027. You believe that’s where first sales will come from, which is why it waits.', h: 'Started anyway on Oct 11', l: ['Agent Factory', 'Pascal Editor fork', 'KH × Zelda repo'], next: GUARD },
   'k-memory': { alias: 'drafts' },
   'k-days': { alias: 'p-otherside' },
 };
-STAGES.forEach((s, i) => { D[s.k] = { eb: 'Ship pipeline · ' + (i + 1) + ' of 6', t: s.n, lede: s.what, m: [[s.who, 'owner']], next: s.gate ? 'Today I ran this gate by hand on ECHO: QA, privacy and cost, all Go with conditions.' : undefined, src: '/agent-factory:ship' }; });
+STAGES.forEach((s, i) => { D[s.k] = { eb: 'Ship pipeline · ' + (i + 1) + ' of 6', t: s.n, lede: s.what, m: [[s.who, 'owner']], next: s.gate ? 'On Oct 11 I ran this gate by hand on ECHO: QA, privacy and cost, all Go with conditions.' : undefined, src: '/agent-factory:ship' }; });
 DEPTS.forEach(d => { D[d.k] = { eb: 'Agent Factory', t: d.name, lede: d.n + ' agents.', h: 'Agents', l: d.agents }; });
 
 /* ---------------- chart builders (Matte rules: text in text tokens, legend for 2+ series) ---------------- */
-function seqFor(m) { return m >= 180 ? 'var(--seq-600)' : m >= 30 ? 'var(--seq-400)' : m > 0 ? 'var(--seq-200)' : 'var(--surface-3)'; }
-function vizFunnel() {
-  const st = [['Screened', 358], ['Verified', 51], ['Shortlist', 27], ['Field review', 7]], w = 480, rowH = 34;
-  return `<svg class="chart" viewBox="0 0 ${w} ${st.length * rowH}">${st.map(([n, v], i) => {
-    const bw = Math.max(6, (v / 358) * (w - 170));
-    return `<g data-tip="${n}|${v} sites"><rect x="120" y="${i * rowH + 4}" width="${bw}" height="22" rx="4" fill="var(--seq-${[300, 400, 500, 600][i]})"/><text x="0" y="${i * rowH + 20}" font-size="14">${n}</text><text x="${126 + bw}" y="${i * rowH + 20}" font-size="14" style="fill:var(--text-primary)">${v}</text></g>`;
-  }).join('')}</svg>`;
+function funnel(rows, note) {
+  const max = Math.max(...rows.map(r => r[1])), w = 480, rowH = 34;
+  return `<svg class="chart" viewBox="0 0 ${w} ${rows.length * rowH}">${rows.map(([n, v, tip], i) => {
+    const bw = Math.max(6, (v / max) * (w - 200));
+    return `<g data-tip="${n}|${tip || v}"><rect x="150" y="${i * rowH + 4}" width="${bw}" height="22" rx="4" fill="var(--seq-${[300, 400, 500, 600][Math.min(3, i)]})"/><text x="0" y="${i * rowH + 20}" font-size="14">${n}</text><text x="${156 + bw}" y="${i * rowH + 20}" font-size="14" style="fill:var(--text-primary)">${v}</text></g>`;
+  }).join('')}</svg>${note ? `<p class="src" style="margin-top:4px">${note}</p>` : ''}`;
+}
+function vizFL() { return funnel([['Site list (Sep 11)', 51], ['Active', 21], ['Field review', 7, '7 sites · 39.90 ac']], 'South Florida (WPB / Mangonia). Mangonia closed Sep 23; Lake Worth started.'); }
+function vizNNJ() { return funnel([['Parcels screened', 787], ['4 ac or more', 330], ['Semifinalists', 22, '12 North Bergen + 10 Secaucus'], ['Finalists', 6, '3 + 3, not agreed yet']], 'Northern NJ. The final 3 + 3 is pending with the reviewer.'); }
+function vizWaiting() {
+  const rows = [['President / VP', 'NNJ final 3 + 3 and Radar 2.0'], ['CEO', 'Town Watch'], ['Manager', 'Industrial briefing launch (her vetting + sender switch)'], ['Capital Markets VP', 'Comps Phase 2 inputs (blocking you)']];
+  return `<h4 style="margin-top:0">Leadership is waiting on</h4><div style="display:grid;gap:8px">${rows.map(([who, what]) => `<div style="display:grid;grid-template-columns:150px 1fr;gap:10px"><b>${who}</b><span style="color:var(--text-secondary)">${what}</span></div>`).join('')}</div>`;
 }
 function vizChecklist() {
   return `<ul style="list-style:none;padding:0;margin:0">${GATE.map((g, i) => `<li style="display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)"><span class="chip" style="--c:var(--critical)">${i + 1}</span><span>${g}</span></li>`).join('')}</ul>`;
 }
 function vizProjects() {
-  return `<div style="display:grid;gap:10px">${PROJECTS.map(p => `<div style="display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:center"><span class="dot" style="background:${p.c}"></span><span><b>${p.name}</b> <span style="color:var(--text-muted)">${p.sub}</span></span><span class="chip" style="--c:${p.st[1]}">${p.st[0]}</span></div>`).join('')}</div>`;
+  const row = (p, c) => `<div style="display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:center"><span class="dot" style="background:${c}"></span><span><b>${p.name}</b> <span style="color:var(--text-muted)">${p.sub}</span></span><span class="chip" style="--c:${STATUS[p.st]}">${p.st}</span></div>`;
+  return `<div style="display:grid;gap:10px">${PROJECTS.map(p => row(p, p.c)).join('')}<h4 style="margin:10px 0 0">Also running</h4>${MORE_PROJECTS.map(p => row(p, 'var(--text-muted)')).join('')}</div>`;
 }
 function catTotals() { const t = {}; QUESTS.forEach(q => { t[q[2]] = (t[q[2]] || 0) + q[1]; }); return t; }
 function questTimeline(w, h) {
@@ -592,20 +620,37 @@ function vizLadder() {
   const r = ['E', 'D', 'C', 'B', 'A', 'S'], w = 480;
   return `<svg class="chart" viewBox="0 0 ${w} 74">${r.map((x, i) => { const on = i <= 4, cur = i === 4; return `<rect x="${i * 80}" y="${cur ? 4 : 14}" width="74" height="${cur ? 44 : 34}" rx="6" fill="${i === 5 ? 'none' : on ? 'var(--series-7)' : 'var(--surface-3)'}" ${i === 5 ? 'stroke="var(--critical)" stroke-dasharray="4 3"' : ''} opacity="${on && !cur ? 0.5 : 1}"/><text x="${i * 80 + 37}" y="${cur ? 32 : 36}" text-anchor="middle" font-size="16" font-weight="700" style="fill:var(--text-primary)">${x}</text>`; }).join('')}<circle cx="418" cy="66" r="4" fill="var(--critical)"/><text x="428" y="70" font-size="12">locked</text></svg>`;
 }
-function vizRhythm() {
-  const d = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], w = 480, base = 150;
-  return `<svg class="chart" viewBox="0 0 ${w} 180"><line x1="0" x2="${w}" y1="${base}" y2="${base}" stroke="var(--axis)"/>${RHYTHM.map((m, i) => { const bh = m / 180 * 120, x = 8 + i * 67; return `<g data-tip="${d[i]}|${m} min planned"><rect x="${x}" y="${base - bh}" width="52" height="${bh}" rx="4" fill="${seqFor(m)}"/><text x="${x + 26}" y="${base - bh - 6}" text-anchor="middle" font-size="13" style="fill:var(--text-primary)">${m}</text><text x="${x + 26}" y="${base + 18}" text-anchor="middle" font-size="13">${d[i]}</text></g>`; }).join('')}</svg>`;
+const DAYTYPE = d => { const w = d.getDay(); return w === 0 || w === 6 ? 'Weekend' : (w === 2 || w === 4) ? 'Open day' : 'Office'; };
+const DTC = { Office: 'var(--series-1)', 'Open day': 'var(--series-3)', Weekend: 'var(--series-4)' };
+function weekGrid(big) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const start = new Date(today); start.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  const end = new Date(2026, 9, 30), weeks = Math.max(1, Math.min(5, Math.ceil(((end - start) / 864e5 + 1) / 7)));
+  let h = '<span></span>' + ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(d => `<span>${d}</span>`).join('');
+  for (let w = 0; w < weeks; w++) {
+    const ws = new Date(start); ws.setDate(start.getDate() + w * 7);
+    h += `<span>${ws.getMonth() + 1}/${ws.getDate()}</span>`;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start); d.setDate(start.getDate() + w * 7 + i);
+      const t = DAYTYPE(d), past = d < today, isToday = +d === +today, dl = +d === +end, after = d > end;
+      const style = `background:${after ? 'var(--surface-2)' : DTC[t]};opacity:${past ? 0.3 : after ? 0.5 : 1};${isToday ? 'box-shadow:0 0 0 2px #fff inset;' : ''}${dl ? 'box-shadow:0 0 0 2px var(--gold) inset;' : ''}display:grid;place-items:center;color:#fff;font:600 ${big ? 13 : 10}px var(--mono)`;
+      h += `<i style="${style}" data-tip="${d.toDateString().slice(0, 10)}${dl ? ' · hackathon deadline' : isToday ? ' · today' : ''}|${t}${t === 'Office' ? ' · drive 7–8 AM, 5–6:30 PM' : t === 'Open day' ? ' · build day' : ''}">${big || dl ? d.getDate() : ''}</i>`;
+    }
+  }
+  return h;
 }
+const WEEK_LEGEND = Object.keys(DTC).map(k => `<span><i style="background:${DTC[k]}"></i>${k}</span>`).join('') + '<span><i style="background:none;box-shadow:0 0 0 2px var(--gold) inset"></i>Oct 30</span>';
+function vizWeek() { return `<div class="hm" style="grid-template-columns:44px repeat(7,1fr)">${weekGrid(true)}</div><div class="legend">${WEEK_LEGEND}</div>`; }
 function vizFactory() {
   return `<div class="stack" style="height:18px">${DEPTS.map(d => `<i style="flex:${d.n};background:${d.c}" data-tip="${d.name}|${d.n} agents"></i>`).join('')}</div>
     <div style="display:grid;gap:10px;margin-top:12px">${DEPTS.map(d => `<div><div style="display:flex;align-items:center;gap:8px;font-weight:600"><i style="width:10px;height:10px;border-radius:2px;background:${d.c}"></i>${d.name} <span style="color:var(--text-muted);font-weight:400">· ${d.n}</span></div><div style="color:var(--text-secondary);font:13px/1.6 var(--mono);padding-left:18px">${d.agents.join(' · ')}</div></div>`).join('')}</div>`;
 }
-const VIZ = { funnel: vizFunnel, checklist: vizChecklist, projects: vizProjects, cats: vizCats, protein: vizProtein, ladder: vizLadder, rhythm: vizRhythm, factory: vizFactory };
+const VIZ = { fl: vizFL, nnj: vizNNJ, waiting: vizWaiting, checklist: vizChecklist, projects: vizProjects, cats: vizCats, protein: vizProtein, ladder: vizLadder, week: vizWeek, factory: vizFactory };
 
 /* ---------------- render dashboard ---------------- */
 $('stages').innerHTML = STAGES.map((s, i) => `<button class="panel tap stage${s.gate ? ' gate' : ''}" data-d="${s.k}" id="st${i}"><em>0${i + 1}</em><b>${s.n}</b><span>${s.who.split(' · ')[0]}</span><div class="bar"><i></i></div></button>`).join('');
-$('plist').innerHTML = PROJECTS.map(p => `<div class="prow" data-d="${p.k}" role="button" tabindex="0"><span class="dot" style="background:${p.c}"></span><span><b>${p.name}</b><small>${p.sub}</small></span><span class="chip" style="--c:${p.st[1]}">${p.st[0]}</span></div>`).join('');
-$('rankChart').innerHTML = ['E', 'D', 'C', 'B', 'A', 'S'].map((r, i) => `<rect x="${i * 37}" y="${i === 4 ? 6 : 16}" width="33" height="${i === 4 ? 40 : 30}" rx="4" fill="${i === 5 ? 'none' : 'var(--series-7)'}" ${i === 5 ? 'stroke="var(--critical)" stroke-dasharray="3 3"' : ''} opacity="${i < 4 ? 0.5 : 1}"/><text x="${i * 37 + 16.5}" y="${i === 4 ? 32 : 36}" text-anchor="middle" font-size="13" font-weight="700" style="fill:#fff">${r}</text>`).join('') + '<text x="203" y="60" text-anchor="middle" font-size="9">locked</text>';
+$('plist').innerHTML = PROJECTS.map(p => `<div class="prow" data-d="${p.k}" role="button" tabindex="0"><span class="dot" style="background:${p.c}"></span><span><b>${p.name}</b><small>${p.sub}</small></span><span class="chip" style="--c:${STATUS[p.st]}">${p.st}</span></div>`).join('');
+
 $('questChart').outerHTML = questTimeline(220, 96).replace('<svg class="chart"', '<svg class="chart" id="questChart"');
 $('questLegend').innerHTML = CATS.map(c => `<span><i style="background:${CAT[c]}"></i>${c}</span>`).join('');
 $('qxp').textContent = Object.values(catTotals()).reduce((a, b) => a + b, 0).toLocaleString();
@@ -621,10 +666,10 @@ $('drows').innerHTML = DEPTS.map(d => `<div data-d="${d.k}" role="button" tabind
   s += `<line x1="${cx}" y1="${cy}" x2="${(cx + 52 * Math.cos(a0)).toFixed(1)}" y2="${(cy + 52 * Math.sin(a0)).toFixed(1)}" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="5" fill="#fff"/>`;
   $('gauge').innerHTML = s;
 })();
-const DAYN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-$('hm').innerHTML = '<span></span>' + ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(d => `<span>${d}</span>`).join('') +
-  Array.from({ length: 6 }, (_, w) => `<span>W${w + 1}</span>` + RHYTHM.map((m, i) => `<i style="background:${seqFor(m)}" data-tip="Week ${w + 1}, ${DAYN[i]}|${m} min planned"></i>`).join('')).join('');
-const KPIS = [['k-days', () => 'T-' + daysLeft(), 'days to Oct 30'], ['k-boot', '06:00', 'system boot'], ['k-lifts', '4–5×', 'lifts / week'], ['k-tests', '123 + 51', 'ECHO tests passing'], ['k-memory', '0', 'chat memory'], ['k-frozen', 'Frozen', 'play lane → Jan 1']];
+$('hm').style.gridTemplateColumns = '34px repeat(7, 1fr)';
+$('hm').innerHTML = weekGrid(false);
+$('hmLegend').innerHTML = WEEK_LEGEND;
+const KPIS = [['k-days', () => 'T-' + daysLeft(), 'days to Oct 30'], ['k-sleep', '23:30', 'sleep target'], ['k-lifts', '4–5×', 'lifts / week'], ['k-protein', '180 g', 'protein / day'], ['k-memory', '0', 'chat memory'], ['k-frozen', 'Closed', 'play lane → Jan 1']];
 $('kpis').innerHTML = KPIS.map(([k, v, l]) => `<button class="panel tap kpi" data-d="${k}"><span class="more">⤢</span><span class="v num">${typeof v === 'function' ? v() : v}</span><small>${l}</small></button>`).join('');
 $('tminus').textContent = 'T-' + daysLeft();
 
@@ -645,10 +690,11 @@ export const Igris = () => {
   ['handoff.md', `# Igris → Chakra · handoff · Oct 11
 Brother — read this start-of-session.
 
-- main: full app, 123 + 51 tests green
-- cap lockout fixed · limited session, not a dead app
-- stand-in face: Prat's AI portrait
-- left: deploy · video · credits · devpost claims
+- you: hackathon schedule co-lead (since Oct 2)
+- ECHO: Pepper's ghost locked · voice, memory, missions by Oct 29
+- main: 123 + 51 tests green · cap lockout fixed
+- radar: NNJ final 3 + 3 · Radar 2.0 on the SharePoint Excel
+- guard: play lane closed to Jan 1 · bedtime 23:30
 
 "The shadows obey discipline, not effort."`],
   ['gate.swift', `// gate.swift · S-RANK · xp alone cannot open it
@@ -676,13 +722,22 @@ function renderCode(fi, chars) {
   const lines = FILES[fi][1].slice(0, chars).split('\n'), last = lines.length - 1;
   $('code').innerHTML = lines.map((l, i) => { const h = `<span class="ln">${String(i + 1).padStart(2, '0')}</span>${hl(l)}${i === last ? '<span class="caret"></span>' : ''}`; return i === last ? `<span class="cl">${h}</span>` : h + '\n'; }).join('');
 }
-const WHO = { quest: 'var(--series-4)', penalty: 'var(--series-8)', igris: 'var(--series-7)', body: 'var(--series-5)', chakra: 'var(--series-2)', prat: 'var(--series-1)', woodmont: 'var(--series-3)', factory: 'var(--series-6)', gate: 'var(--series-8)' };
-const LOG = [['04.03', 'quest', 'B → A-Rank · +1,345 XP', '✓'], ['04.03', 'penalty', 'zero gym sessions', '−300'], ['04.16', 'igris', 'build pings every 30 min', '✓'], ['05.07', 'body', 'protein 102 g / 150 g', '−48 g'], ['05.08', 'chakra', 'Chakra Link live', '✓'], ['05.09', 'igris', 'Oracle ARM verified', '✓'], ['05.15', 'chakra', 'ASCENDED dashboard', 'ship'], ['05.15', 'chakra', 'pipeline · 12 programs', '$0'], ['06.12', 'prat', 'OPERATION: ASCENSION', '10 d'], ['08.--', 'woodmont', 'website rebuild w/ CEO', 'ship'], ['10.02', 'igris', 'ECHO relay → ChatGPT', '✓'], ['10.04', 'igris', 'Inside Igris', '✓'], ['10.11', 'factory', '15 agents · 4 depts', 'hire'], ['10.11', 'igris', 'ECHO launch review', 'Go*'], ['10.11', 'igris', 'main: 123 + 51 tests', '✓'], ['10.11', 'gate', 'S-Rank 0 / 8', 'lock']];
+const AREA = { work: 'var(--series-3)', build: 'var(--series-1)', body: 'var(--series-5)', system: 'var(--series-7)' };
+const LOG = [
+  ['07.--', 'body', 'under 200 lbs', 'milestone', 'body'], ['07.22', 'elevation', 'pilot phase 1 done', '✓', 'build'], ['08.03', 'orion', 'known-issues doc sent', '4 + 5', 'work'],
+  ['08.--', 'website', 'finished on WordPress', 'ship', 'work'], ['08.13', 'director', '“define the path” pitched', '?', 'work'], ['08.26', 'comps', 'CM VP set up on Claude', '✓', 'work'],
+  ['09.02', 'lanes', 'lanes remade · Lane A revived', '✓', 'system'], ['09.09', 'life os', 'single-file app · Chakra named', 'ship', 'system'], ['09.11', 'radar', 'WPB deck + 51-site list', '21 active', 'work'],
+  ['09.15', 'nnj', 'phase 1 · 787 parcels', '330 ≥4 ac', 'work'], ['09.16', 'radar', 'field review', '7 active', 'work'], ['09.18', 'nnj', 'Track A semifinalists', '12 + 10', 'work'],
+  ['09.19', 'fridge', 'Virtual Fridge published', 'ship', 'build'], ['09.22', 'hackathon', 'entered · The Other Side', '✓', 'build'], ['09.23', 'radar', 'Mangonia closed · Lake Worth', '→', 'work'],
+  ['09.28', 'radar', 'IT rejects hosting', 'Radar 2.0', 'work'], ['09.29', 'nightly', 'v3.2 ARISE', 'ship', 'build'], ['10.02', 'council', 'Chakra back · co-lead', '✓', 'system'],
+  ['10.05', 'town watch', 'pilot v3.1', 'pilot', 'work'], ['10.07', 'ember', 'moved to Mac/Xcode', '→', 'build'], ['10.11', 'echo', 'Pepper’s ghost locked', '✓', 'build'],
+  ['10.11', 'engine', 'Pascal Editor forked', 'base', 'build'], ['10.11', 'igris', 'ECHO launch review', 'Go*', 'system'], ['10.11', 'igris', 'ECHO main · 123 + 51 tests', '✓', 'system'], ['10.11', 'factory', 'Agent Factory repo', 'play lane', 'system'],
+];
 let logN = 0;
 function pushLog() {
   const rows = [];
   for (let i = Math.max(0, logN - 11); i <= logN; i++) rows.push([LOG[i % LOG.length], i === logN]);
-  $('log').innerHTML = rows.map(([[d, a, m, r], n]) => `<div class="${n ? 'new' : ''}"><span>[${d}]</span><span class="who" style="--c:${WHO[a]}">${a}</span><span class="msg">${esc(m)}</span><span class="r">${r}</span></div>`).join('');
+  $('log').innerHTML = rows.map(([[d, a, m, r, area], n]) => `<div class="${n ? 'new' : ''}"><span>[${d}]</span><span class="who" style="--c:${AREA[area]}">${a}</span><span class="msg">${esc(m)}</span><span class="r">${esc(r)}</span></div>`).join('');
   logN++;
 }
 
@@ -818,8 +873,8 @@ function drawTorus(t) {
   g0.setTransform(PR, 0, 0, PR, 0, 0); drawFx(t); g0.setTransform(1, 0, 0, 1, 0, 0);
   g0.globalCompositeOperation = 'source-over';
 }
-const TAGS = [['Agent Factory · 15', 1.5, 0.3, 'var(--series-6)', 'factory'], ['launch gate', 3.4, -0.6, 'var(--gold)', 's-gate'], ['codex · build', 2.6, 1.0, 'var(--series-7)', 's-build'], ['chakra · picks', 0.4, 1.2, 'var(--series-2)', 'council'],
-  [`ECHO · T-${daysLeft()}`, 4.2, 0.9, 'var(--series-1)', 'p-otherside'], ['A-Rank · 2,395', 5.0, 0.2, 'var(--series-7)', 'rank'], ['358 → 7', 5.8, 1.4, 'var(--series-3)', 'p-radar'], ['150 g floor', 0.9, 2.6, 'var(--series-5)', 'p-body'], ['lift 4–5× / wk', 3.9, 2.2, 'var(--series-2)', 'k-lifts'], ['gate 0 / 8', 2.1, 2.9, 'var(--critical)', 'gate']];
+const TAGS = [['Agent Factory · 15', 1.5, 0.3, 'var(--series-6)', 'factory'], ['launch gate', 3.4, -0.6, 'var(--gold)', 's-gate'], ['codex · build', 2.6, 1.0, 'var(--series-7)', 's-build'], ['chakra · co-lead', 0.4, 1.2, 'var(--series-2)', 'council'],
+  [`ECHO · T-${daysLeft()}`, 4.2, 0.9, 'var(--series-1)', 'p-otherside'], ['Life OS · Lv 27', 5.0, 0.2, 'var(--series-7)', 'level'], ['NNJ · 3 + 3', 5.8, 1.4, 'var(--series-3)', 'p-nnj'], ['180 g protein', 0.9, 2.6, 'var(--series-5)', 'p-body'], ['lift 4–5× / wk', 3.9, 2.2, 'var(--series-2)', 'k-lifts'], ['gate 0 / 8', 2.1, 2.9, 'var(--critical)', 'gate']];
 $('tags').innerHTML = TAGS.map(([t, , , c, k], i) => `<button class="tag" id="tg${i}" data-d="${k}" style="--c:${c}">${esc(t)}</button>`).join('');
 const LEADS = [['.box.a', 0], ['.box.b', 3], ['.box.c', 9]];
 function placeTags() {
@@ -920,25 +975,27 @@ card.addEventListener('pointerleave', () => { card.style.setProperty('--rx', '0d
 // time, expires, name, icon, description, xp, category, critical (from App.jsx)
 const QD = [["06:00", "07:00", "SYSTEM BOOT", "⚡", "Wake up. Stand within 60s. Drink 16oz water.", 50, "Discipline", true], ["06:10", "07:00", "BODY ACTIVATION", "🔥", "10 squats · 10 arm circles · 10 calf raises · 60s stretch", 75, "Fitness", false], ["06:30", "08:00", "MANA CHARGE", "☕", "Celsius/coffee + 8oz water. Zero sugar only.", 25, "Nutrition", false], ["06:45", "07:30", "ARMOR EQUIP", "👔", "Get dressed. Look sharp. Posture check.", 25, "Discipline", false], ["07:00", "08:00", "GATE TRANSIT", "🚗", "Commute. Podcast or audiobook — no music zombiemode.", 30, "Focus", false], ["07:30", "09:00", "DUNGEON OPEN", "🖥️", "Work started. Posture check. 30-min stand reminders ON.", 100, "Discipline", true], ["10:00", "11:00", "WATER RAID I", "💧", "32oz consumed by now. Refill. Light yellow urine.", 50, "Nutrition", false], ["10:30", "11:00", "STAND BREAK I", "🧍", "Stand. Walk. 10 calf raises at desk.", 30, "Fitness", false], ["11:00", "12:00", "EXTRACTION I", "🎯", "Deep work block. Phone on DND. Zero distractions.", 100, "Focus", false], ["12:00", "13:30", "MAIN QUEST MEAL", "🍖", "35-50g protein FIRST. Large veggies. Measured carbs.", 75, "Nutrition", true], ["13:00", "14:00", "WATER RAID II", "💧", "64oz total by now. Refill again.", 50, "Nutrition", false], ["13:30", "14:00", "STAND BREAK II", "🧍", "Walk loop. Stretch hip flexors. Reset posture.", 30, "Fitness", false], ["14:00", "15:30", "EXTRACTION II", "🎯", "Afternoon deep work. Most creative block — use it.", 100, "Focus", false], ["15:00", "16:00", "WATER RAID III", "💧", "96oz consumed. On track for gallon.", 50, "Nutrition", false], ["15:30", "16:00", "STAND BREAK III", "🧍", "Stand, walk, 10 calf raises. Avoid afternoon slump.", 30, "Fitness", false], ["16:00", "17:00", "EXTRACTION III", "🎯", "Final work sprint. Close loops. Clear inbox.", 100, "Focus", false], ["17:00", "18:00", "DUNGEON CLEAR", "🏁", "Work done. Write tomorrow's top 3. Shut laptop.", 75, "Discipline", false], ["17:30", "18:30", "RETURN GATE", "🚗", "Commute home. Decompress. No doom scrolling.", 30, "Discipline", false], ["18:00", "19:00", "RESPAWN POINT", "🏠", "Home. Change clothes. Light snack optional.", 25, "Discipline", false], ["19:00", "20:00", "BOSS PREP", "🍌", "Pre-gym fuel: banana or rice cake + caffeine if needed.", 25, "Nutrition", false], ["19:45", "20:15", "SHADOW WARMUP", "🔥", "5 min cardio warmup. Dynamic stretches. Mental lock-in.", 50, "Fitness", false], ["20:00", "21:30", "SHADOW RAID", "⚔️", "V-TAPER PROTOCOL. Give everything. No phone between sets.", 200, "Fitness", true], ["21:15", "22:00", "RECOVERY RATIONS", "🍗", "25-40g protein post-workout. Real food, not junk.", 75, "Nutrition", true], ["21:30", "22:30", "WATER RAID IV", "💧", "128oz target. Final push for the gallon.", 50, "Nutrition", false], ["22:00", "23:00", "REST PHASE", "🎮", "Shows/games. Stand every 30min. No snacking.", 30, "Discipline", false], ["23:00", "23:59", "SHADOW SLEEP", "🌙", "Wind down. No screens. Lights out.", 200, "Discipline", true]];
 const TASKS = [
+  ['Igris guard', [
+    ['Protect Oct 30 and 23:30', GUARD, ['Guard', 'var(--critical)']],
+  ]],
   ['Lane B · The Other Side · due Oct 30', [
-    ['Deploy main to Railway', 'Your deploy agent runs it. You rotate the Nebius key and set the judge password.', ['In progress', 'var(--warning)']],
+    ['Voice, memory and missions working', 'You, Codex and me. Due Oct 29.', ['Building', 'var(--warning)']],
+    ['Deploy main to Railway', 'Your deploy agent. You rotate the Nebius key and set the judge password.', ['To do', 'var(--serious)']],
     ['Record the demo video', 'Under 3 minutes, public YouTube, from the live build.', ['To do', 'var(--serious)']],
-    ['Check Nebius credits', 'They have to last until judging ends on Dec 15.', ['To do', 'var(--serious)']],
-    ['Fix the Devpost claims', 'Speech is the browser’s, not NVIDIA. No Tavily, no sandboxes.', ['To do', 'var(--serious)']],
+    ['Check Nebius credits and Devpost claims', 'Credits last to Dec 15; speech is the browser’s, no Tavily, no sandboxes.', ['To do', 'var(--serious)']],
+    ['Submit the entry', 'Oct 30, 10:00 AM PT.', ['Pending', 'var(--warning)']],
   ]],
-  ['Lane A · Director', [
-    ['Write the one-page Director case', 'Problem, what you built, hours saved, what you’d run next. Lead with Agent Factory and the Radar.', ['To do', 'var(--serious)']],
+  ['Lane A · Work', [
+    ['Director conversation', 'By Dec 31. Build the one-page case from what you’ve shipped.', ['In progress', 'var(--warning)']],
+    ['NNJ final 3 + 3', 'You and the reviewer. No date.', ['Open', 'var(--serious)']],
+    ['Radar 2.0', 'The HTML app on an Excel master in a synced SharePoint folder.', ['Building', 'var(--warning)']],
+    ['Town Watch', 'Confirm seed towns, then automate collection.', ['Pilot', 'var(--serious)']],
+    ['Comps Phase 2', 'Waiting on the Capital Markets VP’s inputs.', ['Blocked', 'var(--critical)']],
+    ['Industrial briefing launch', 'Your manager’s vetting and the sender switch.', ['Unconfirmed', 'var(--text-muted)']],
   ]],
-  ['S-Rank Gate', [
-    ['Condition 1: SwiftUI MVP', 'Create the project and get one screen running on your phone.', ['Locked', 'var(--critical)']],
-  ]],
-  ['Agent Factory', [
-    ['Push prcasley/agent-factory', 'So the install line works and I can review the agents.', ['Deciding', 'var(--warning)']],
-  ]],
-  ['Done Oct 11', [
-    ['ECHO main has the full app', '123 + 51 tests passing.', ['Done', 'var(--good)']],
-    ['Should-fixes and cap lockout', 'Voice cap, rate limit, no wasted retries, limited sessions.', ['Done', 'var(--good)']],
-    ['Stand-in face swapped', 'Your AI portrait replaced the Obama photo.', ['Done', 'var(--good)']],
+  ['Later · play lane', [
+    ['Ember', 'Unity license or the Xcode build.', ['Blocked', 'var(--critical)']],
+    ['File Casley LLC', 'NJ certificate, $100.', ['Not started', 'var(--text-muted)']],
   ]],
 ];
 const cinema = $('cinema'), cinCore = $('cinCore'), coreHome = document.querySelector('.core');
@@ -975,7 +1032,7 @@ function renderList(scroll) {
   const L = $('cinList');
   if (tab === 'q') {
     const { cur } = questState();
-    L.innerHTML = QD.map((q, i) => `<li class="q ${i < cur ? 'past' : i === cur ? 'now' : ''}" id="q${i}"><time>${q[0]}</time>
+    L.innerHTML = `<li class="grp" style="text-transform:none;letter-spacing:0;font-weight:400;font-size:14px;line-height:1.5">March schedule from your Shadow Monarch app. Since then: sleep target 23:30, gym in the evening (closes 20:00), office Mon/Wed/Fri. Verify the times.</li>` + QD.map((q, i) => `<li class="q ${i < cur ? 'past' : i === cur ? 'now' : ''}" id="q${i}"><time>${q[0]}</time>
       <div><b><span class="dot" style="background:${CAT[q[6]]}"></span>${q[3]} ${esc(q[2])}${q[7] ? '<span class="crit">CRITICAL</span>' : ''}</b><p>${esc(q[4])}</p><small>${q[6]} · until ${q[1]}${i < cur ? ' · past' : i === cur ? ' · now' : ''}</small></div>
       <span class="xp">+${q[5]}</span></li>`).join('');
     if (scroll && cur >= 0) { const el = $('q' + cur); L.scrollTop = Math.max(0, el.offsetTop - L.clientHeight / 2 + el.offsetHeight / 2); }
