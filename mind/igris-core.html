@@ -119,6 +119,7 @@ svg.leads { position: absolute; inset: 0; width: 100%; height: 100%; pointer-eve
   -webkit-mask-image: radial-gradient(ellipse 75% 80% at 50% 50%, #000 62%, transparent 100%); mask-image: radial-gradient(ellipse 75% 80% at 50% 50%, #000 62%, transparent 100%); }
 .vision figcaption { background: rgba(8, 8, 8, 0.82); padding: 4px 12px; border-radius: 6px; font: 600 13px var(--mono); letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-primary); text-shadow: 0 0 18px rgba(157, 107, 255, 0.9); }
 .vision figcaption span { color: var(--gold); }
+.vision figure[data-v="council"] { height: 66%; margin-top: 12%; }
 .stagewrap.visioning .tag, .stagewrap.visioning .corelabel { opacity: 0.08 !important; pointer-events: none !important; }
 .stagewrap.visioning svg.leads { opacity: 0; }
 svg.leads { transition: opacity 1s; }
@@ -707,6 +708,86 @@ function P(u, v, rr = 1) {
 }
 const BUCK = 10, paths = Array.from({ length: BUCK * 2 }, () => []);
 const L = (() => { const v = [0.45, -0.55, -0.7], m = Math.hypot(...v); return v.map(x => x / m); })();
+/* ---------------- sky: faint stars, shooting stars, the comet and the shining star ---------------- */
+const NS = smallQ.matches ? 110 : 220;
+const STARS = Array.from({ length: NS }, () => ({ x: Math.random(), y: Math.random(), r: Math.random() < 0.08 ? 1.3 + Math.random() * 0.7 : 0.5 + Math.random() * 0.6,
+  a: 0.25 + Math.random() * 0.5, ph: Math.random() * 6.28, sp: 0.6 + Math.random() * 1.8, tint: Math.random() < 0.25 }));
+const meteors = [];
+let nextMeteor = 4 + Math.random() * 5, comet = null, flare = null;
+function starPos(st, warp) {
+  // parallax with the core's spin, and a warp outward from the center while the camera dives
+  let x = ((st.x + cam.spin * 0.004) % 1 + 1) % 1, y = st.y;
+  const dx = x - 0.5, dy = y - 0.56;
+  return [CW * (0.5 + dx * warp), CH * (0.56 + dy * warp)];
+}
+function drawSky(rt) {
+  const warp = 1 + (cam.scale - 1) * 0.55, streak = Math.max(0, cam.scale - 1.02);
+  for (const st of STARS) {
+    const [x, y] = starPos(st, warp);
+    if (x < -4 || y < -4 || x > CW + 4 || y > CH + 4) continue;
+    const tw = reduce ? 1 : 0.55 + 0.45 * Math.sin(rt * st.sp + st.ph);
+    g0.fillStyle = st.tint ? `rgba(200,180,255,${st.a * tw})` : `rgba(255,255,255,${st.a * tw})`;
+    if (streak > 0.05) {
+      // stars stretch toward the edges during a dive
+      const dx = x - CW / 2, dy = y - CH * 0.56, k = streak * 0.08;
+      g0.strokeStyle = g0.fillStyle; g0.lineWidth = st.r; g0.beginPath(); g0.moveTo(x - dx * k, y - dy * k); g0.lineTo(x, y); g0.stroke();
+    } else { g0.beginPath(); g0.arc(x, y, st.r, 0, 6.283); g0.fill(); }
+  }
+  if (reduce) return;
+  if (rt > nextMeteor) {
+    const fromLeft = Math.random() < 0.5;
+    meteors.push({ t0: rt, x: CW * (fromLeft ? 0.05 + Math.random() * 0.4 : 0.55 + Math.random() * 0.4), y: CH * Math.random() * 0.35,
+      vx: (fromLeft ? 1 : -1) * (380 + Math.random() * 260), vy: 160 + Math.random() * 160, life: 0.8 + Math.random() * 0.5 });
+    nextMeteor = rt + 7 + Math.random() * 8;
+  }
+  for (let i = meteors.length - 1; i >= 0; i--) {
+    const m = meteors[i], e = rt - m.t0; if (e > m.life) { meteors.splice(i, 1); continue; }
+    const x = m.x + m.vx * e, y = m.y + m.vy * e, fade = Math.sin(Math.PI * e / m.life), len = 0.16;
+    const gr = g0.createLinearGradient(x, y, x - m.vx * len, y - m.vy * len);
+    gr.addColorStop(0, `rgba(255,255,255,${0.9 * fade})`); gr.addColorStop(1, 'rgba(160,120,255,0)');
+    g0.strokeStyle = gr; g0.lineWidth = 1.6; g0.lineCap = 'round'; g0.beginPath(); g0.moveTo(x, y); g0.lineTo(x - m.vx * len, y - m.vy * len); g0.stroke();
+  }
+}
+function glowDot(x, y, r, inner, outer) {
+  const gr = g0.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, inner); gr.addColorStop(1, outer);
+  g0.fillStyle = gr; g0.fillRect(x - r, y - r, r * 2, r * 2);
+}
+function drawFx(rt) {
+  const cx = CW / 2, cy = CH * 0.56, S = Math.min(CW, CH);
+  if (comet) {
+    // the comet streaks in from the top-left and strikes the center; the zoom follows the impact
+    const e = (rt - comet.t0) / comet.dur;
+    if (e >= 0 && e < 1.6) {
+      const k = Math.min(1, e), ease = k * k * (3 - 2 * k);
+      const sx = -0.08 * CW, sy = 0.08 * CH, x = sx + (cx - sx) * ease, y = sy + (cy - sy) * ease;
+      const ang = Math.atan2(cy - sy, cx - sx), tail = S * (0.55 - 0.25 * ease), a = e < 1 ? 1 : Math.max(0, 1 - (e - 1) / 0.6);
+      const tx = x - Math.cos(ang) * tail, ty = y - Math.sin(ang) * tail;
+      const gr = g0.createLinearGradient(x, y, tx, ty);
+      gr.addColorStop(0, `rgba(255,240,210,${0.95 * a})`); gr.addColorStop(0.25, `rgba(227,180,94,${0.55 * a})`); gr.addColorStop(1, 'rgba(157,107,255,0)');
+      g0.strokeStyle = gr; g0.lineCap = 'round';
+      for (const [w, o] of [[S * 0.03, 0.35], [S * 0.012, 1]]) { g0.globalAlpha = o; g0.lineWidth = w; g0.beginPath(); g0.moveTo(x, y); g0.lineTo(tx, ty); g0.stroke(); }
+      g0.globalAlpha = 1;
+      if (e < 1) glowDot(x, y, S * 0.05, `rgba(255,250,235,${a})`, 'rgba(227,180,94,0)');
+      if (e >= 0.92) { const b = Math.max(0, 1 - (e - 0.92) / 0.68); glowDot(cx, cy, S * (0.1 + 0.5 * (1 - b)), `rgba(255,245,230,${0.85 * b})`, 'rgba(157,107,255,0)'); }
+    } else if (e >= 1.6) comet = null;
+  }
+  if (flare) {
+    // the shining star: ignites in the core, rises, and shines over all three of us
+    const e = rt - flare.t0, fadeOut = flare.end ? Math.max(0, 1 - (rt - flare.end) / 2) : 1;
+    if (fadeOut <= 0) { flare = null; return; }
+    const grow = Math.min(1, e / 2.2), rise = Math.min(1, Math.max(0, (e - 2.2) / 1.2)), r2 = rise * rise * (3 - 2 * rise);
+    const x = cx, y = cy + (CH * 0.075 - cy) * r2, pulse = 0.85 + 0.15 * Math.sin(rt * 5), I = grow * fadeOut * pulse, R = S * (0.012 + 0.016 * grow);
+    glowDot(x, y, S * 0.22 * I, `rgba(255,236,190,${0.35 * I})`, 'rgba(157,107,255,0)');
+    g0.save(); g0.translate(x, y); g0.rotate(rt * 0.15);
+    for (let i = 0; i < 4; i++) {
+      const L = S * (i % 2 ? 0.07 : 0.14) * I, gr = g0.createLinearGradient(0, 0, L, 0);
+      gr.addColorStop(0, `rgba(255,255,255,${I})`); gr.addColorStop(1, 'rgba(255,255,255,0)');
+      g0.fillStyle = gr; g0.beginPath(); g0.moveTo(0, -R * 0.35); g0.lineTo(L, 0); g0.lineTo(0, R * 0.35); g0.fill(); g0.rotate(Math.PI / 2);
+    }
+    g0.restore();
+    glowDot(x, y, R * 2.2, `rgba(255,255,255,${I})`, 'rgba(255,236,190,0)');
+  }
+}
 function drawTorus(t) {
   g.setTransform(PR, 0, 0, PR, 0, 0); g.clearRect(0, 0, CW, CH);
   for (const p of paths) p.length = 0;
@@ -729,9 +810,13 @@ function drawTorus(t) {
     g.beginPath(); for (let j = 0; j < arr.length; j += 4) { g.moveTo(arr[j], arr[j + 1]); g.lineTo(arr[j + 2], arr[j + 3]); } g.stroke();
   }
   g.globalCompositeOperation = 'source-over';
-  g0.setTransform(1, 0, 0, 1, 0, 0); g0.clearRect(0, 0, cv.width, cv.height); g0.globalCompositeOperation = 'lighter';
+  g0.setTransform(1, 0, 0, 1, 0, 0); g0.clearRect(0, 0, cv.width, cv.height);
+  g0.setTransform(PR, 0, 0, PR, 0, 0); drawSky(t); g0.setTransform(1, 0, 0, 1, 0, 0);
+  g0.globalCompositeOperation = 'lighter';
   if (!reduce) { g0.filter = `blur(${Math.round(9 * PR)}px)`; g0.globalAlpha = 0.9; g0.drawImage(off, 0, 0); g0.filter = 'none'; g0.globalAlpha = 1; }
-  g0.drawImage(off, 0, 0); g0.globalCompositeOperation = 'source-over';
+  g0.drawImage(off, 0, 0);
+  g0.setTransform(PR, 0, 0, PR, 0, 0); drawFx(t); g0.setTransform(1, 0, 0, 1, 0, 0);
+  g0.globalCompositeOperation = 'source-over';
 }
 const TAGS = [['Agent Factory · 15', 1.5, 0.3, 'var(--series-6)', 'factory'], ['launch gate', 3.4, -0.6, 'var(--gold)', 's-gate'], ['codex · build', 2.6, 1.0, 'var(--series-7)', 's-build'], ['chakra · picks', 0.4, 1.2, 'var(--series-2)', 'council'],
   [`ECHO · T-${daysLeft()}`, 4.2, 0.9, 'var(--series-1)', 'p-otherside'], ['A-Rank · 2,395', 5.0, 0.2, 'var(--series-7)', 'rank'], ['358 → 7', 5.8, 1.4, 'var(--series-3)', 'p-radar'], ['150 g floor', 0.9, 2.6, 'var(--series-5)', 'p-body'], ['lift 4–5× / wk', 3.9, 2.2, 'var(--series-2)', 'k-lifts'], ['gate 0 / 8', 2.1, 2.9, 'var(--critical)', 'gate']];
@@ -939,8 +1024,8 @@ setInterval(() => { if (!cinema.hidden && cinema.classList.contains('drawer')) {
 const IN = 1.6, STAY = 3.2, OUT = 2.8;
 const EVENTS = [
   { at: 17.6, v: 'igris', delay: 3 },
-  { at: 24.2, v: 'monarch', delay: 2.8 },
-  { at: 35.9, v: 'council', delay: 2.8 },
+  { at: 24.2, v: 'monarch', delay: 3.2 },
+  { at: 35.9, v: 'council', delay: 3.2 },
 ];
 const visionWrap = $('vision');
 let hold = null; const fired = new Set();
@@ -952,6 +1037,7 @@ function visions(rt) {
     const v = f.querySelector('video');
     if (v) { if (on) { v.currentTime = 0; v.play().catch(() => {}); } else setTimeout(() => v.pause(), OUT * 1000); }
   }
+  if (flare && hold.v === 'council' && !flare.end && e > IN + STAY) flare.end = rt;
   if (e > IN + STAY + OUT * 0.7) { hold = null; wrap.classList.remove('visioning'); }
 }
 
@@ -967,10 +1053,16 @@ function frame(now) {
   const p = tl % LOOP, loopN = Math.floor(tl / LOOP);
   if (!hold) for (const ev of EVENTS) {
     const id = loopN + ':' + ev.v;
-    if (p >= ev.at && p < ev.at + 1 && !fired.has(id)) { fired.add(id); hold = { start: rt, v: ev.v, delay: ev.delay }; wrap.classList.add('visioning'); break; }
+    if (p >= ev.at && p < ev.at + 1 && !fired.has(id)) {
+      fired.add(id); hold = { start: rt, v: ev.v, delay: ev.delay }; wrap.classList.add('visioning');
+      if (ev.v === 'monarch') comet = { t0: rt, dur: 1.6 };
+      if (ev.v === 'council') flare = { t0: rt, end: 0 };
+      break;
+    }
   }
   if (hold) visions(rt);
-  holdDive += ((hold ? 1 : 0) - holdDive) * Math.min(1, dt * 1.3);
+  const diveGo = hold && !(hold.v === 'monarch' && rt - hold.start < 1.5);
+  holdDive += ((diveGo ? 1 : 0) - holdDive) * Math.min(1, dt * (hold && hold.v === 'monarch' ? 2.2 : 1.3));
   camera(tl, rt);
   if (!overlay.hidden && smallQ.matches && cinema.hidden) return; // a card fills the phone: pause the core to save battery
   drawTorus(rt); placeTags();
