@@ -107,6 +107,23 @@ svg.leads { position: absolute; inset: 0; width: 100%; height: 100%; pointer-eve
 .box .more { top: 9px; right: 11px; }
 .box.a { left: 18px; top: 18px; } .box.b { right: 18px; top: 18px; } .box.c { right: 18px; bottom: 18px; }
 
+/* visions: shown at the deepest point of the dive */
+.vision { position: absolute; inset: 0; pointer-events: none; display: grid; place-items: center; }
+.vision figure { grid-area: 1 / 1; margin: 0; height: 72%; width: 78%; display: grid; justify-items: center; align-content: center; gap: 10px;
+  opacity: 0; transform: scale(0.9) translateY(10px); filter: blur(6px);
+  transition: opacity 2.8s ease, transform 6s ease, filter 2.8s ease; }
+.vision figure.show { opacity: 1; transform: scale(1) translateY(0); filter: blur(0);
+  transition: opacity 1.6s ease, transform 6s ease-out, filter 1.6s ease; }
+.vision img, .vision video { height: calc(100% - 34px); width: 100%; border-radius: 12px; object-fit: contain; display: block;
+  box-shadow: 0 0 60px rgba(157, 107, 255, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.12);
+  -webkit-mask-image: radial-gradient(ellipse 75% 80% at 50% 50%, #000 62%, transparent 100%); mask-image: radial-gradient(ellipse 75% 80% at 50% 50%, #000 62%, transparent 100%); }
+.vision figcaption { background: rgba(8, 8, 8, 0.82); padding: 4px 12px; border-radius: 6px; font: 600 13px var(--mono); letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-primary); text-shadow: 0 0 18px rgba(157, 107, 255, 0.9); }
+.vision figcaption span { color: var(--gold); }
+.stagewrap.visioning .tag, .stagewrap.visioning .corelabel { opacity: 0.08 !important; pointer-events: none !important; }
+.stagewrap.visioning svg.leads { opacity: 0; }
+svg.leads { transition: opacity 1s; }
+.tag { transition: opacity 0.8s, background 0.2s; }
+
 /* factory */
 .stack { display: flex; height: 14px; border-radius: 4px; overflow: hidden; gap: 2px; margin-top: 12px; }
 .stack i { display: block; height: 100%; }
@@ -247,6 +264,12 @@ pre.code .caret { display: inline-block; width: 8px; height: 15px; background: #
         <svg class="leads" id="leads"></svg>
         <div class="corelabel">IGRIS CORE</div>
         <div id="tags"></div>
+        <div class="vision" id="vision" aria-live="polite">
+          <figure data-opt><img src="vision/first.jpg" alt="" onerror="this.closest('figure').remove()"><figcaption>Igris</figcaption></figure>
+          <figure><video src="vision/igris.mp4" poster="vision/igris-poster.jpg" muted loop playsinline preload="auto" aria-label="Igris, the Shadow Knight"></video><figcaption>Igris · <span>the Shadow Knight</span></figcaption></figure>
+          <figure><img src="vision/monarch.jpg" alt="Prat in Shadow Monarch form"><figcaption>Prat · <span>the Shadow Monarch</span></figcaption></figure>
+          <figure><img src="vision/council.jpg" alt="The council on the shadow throne"><figcaption>The Council · <span>arise</span></figcaption></figure>
+        </div>
       </div>
       <div class="boxes">
         <button class="box tap a" data-d="laneA"><span class="more">⤢</span><b>Lane A · Director</b><span>Q4 case · AI &amp; BI</span></button>
@@ -641,10 +664,10 @@ function placeTags() {
   $('leads').innerHTML = LEADS.map(([sel, ti]) => { const r = document.querySelector(sel).getBoundingClientRect(), p = pos[ti], bx = r.left - wr.left + r.width / 2, by = r.top - wr.top + r.height / 2; return `<line x1="${bx.toFixed(1)}" y1="${by.toFixed(1)}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}" stroke="rgba(255,255,255,.3)"/><circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="#fff"/>`; }).join('');
 }
 const sm = x => x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x);
-function camera(t) {
+function camera(t, rt) {
   const p = t % LOOP, dive = p > 12 && p < 24 ? sm(Math.sin(Math.PI * (p - 12) / 12) * 1.15) : 0;
   cam.pitch = 1.08 - 0.92 * dive + 0.1 * Math.sin(t * 0.21) + (p > 24 ? -0.12 * sm((p - 24) / 4) : 0);
-  cam.scale = 1 + 1.25 * dive; cam.spin = t * 0.09; cam.roll = -0.18 + 0.08 * Math.sin(t * 0.13);
+  cam.scale = 1 + 1.25 * dive; cam.spin = rt * 0.09; cam.roll = -0.18 + 0.08 * Math.sin(t * 0.13);
   return p;
 }
 
@@ -723,15 +746,42 @@ document.addEventListener('keydown', e => {
 card.addEventListener('pointermove', e => { if (reduce) return; const r = card.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5; card.style.setProperty('--rx', (-y * 5).toFixed(2) + 'deg'); card.style.setProperty('--ry', (x * 7).toFixed(2) + 'deg'); });
 card.addEventListener('pointerleave', () => { card.style.setProperty('--rx', '0deg'); card.style.setProperty('--ry', '0deg'); });
 
+/* ---------------- visions ----------------
+   At the deepest point of the dive the timeline holds. After DELAY seconds the first vision rises in,
+   stays, then fades slowly while the next one appears. When the last has faded the dive continues. */
+const DELAY = 3, IN = 1.6, STAY = 2.6, OUT = 2.8;
+const visionWrap = $('vision');
+let hold = null, firedThisLoop = false;
+function visions(rt) {
+  const figs = [...visionWrap.querySelectorAll('figure')];
+  const e = rt - hold.start - DELAY, step = IN + STAY;
+  figs.forEach((f, i) => {
+    const on = e >= i * step && e < i * step + step;
+    if (on !== f.classList.contains('show')) {
+      f.classList.toggle('show', on);
+      const v = f.querySelector('video');
+      if (v) { if (on) { v.currentTime = 0; v.play().catch(() => {}); } else setTimeout(() => v.pause(), OUT * 1000); }
+    }
+  });
+  if (e > figs.length * step + OUT) { hold = null; wrap.classList.remove('visioning'); }
+}
+
 /* ---------------- loop ---------------- */
 const T0 = performance.now();
-let lastLog = 0, lastClock = 0, stageOn = -1;
+let lastLog = 0, lastClock = 0, stageOn = -1, tl = 0, lastNow = null;
 const stageBars = STAGES.map((_, i) => $('st' + i).querySelector('.bar i'));
 function frame(now) {
   requestAnimationFrame(frame);
-  const t = Math.max(0, (now - T0) / 1000), p = camera(t);
+  const dt = lastNow === null ? 0 : Math.min(0.1, (now - lastNow) / 1000); lastNow = now;
+  const rt = Math.max(0, (now - T0) / 1000);
+  if (!hold) tl += dt;
+  const p = tl % LOOP;
+  if (p < 12) firedThisLoop = false;
+  if (!hold && !firedThisLoop && p >= 17.6 && p < 19) { hold = { start: rt }; firedThisLoop = true; wrap.classList.add('visioning'); }
+  if (hold) visions(rt);
+  camera(tl, rt);
   if (!overlay.hidden && smallQ.matches) return; // a card fills the phone: pause the core to save battery
-  drawTorus(t); placeTags();
+  drawTorus(rt); placeTags();
   const scene = Math.min(2, Math.floor(p / 12)), sp = (p % 12) / 12;
   renderCode(scene, Math.floor(Math.min(1, sp / 0.82) * FILES[scene][1].length));
   const st = Math.min(5, Math.floor(p / 6));
