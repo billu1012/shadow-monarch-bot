@@ -124,6 +124,68 @@ svg.leads { position: absolute; inset: 0; width: 100%; height: 100%; pointer-eve
 svg.leads { transition: opacity 1s; }
 .tag { transition: opacity 0.8s, background 0.2s; }
 
+/* full-screen mode */
+.fs-btn { display: inline-flex; align-items: center; gap: 8px; font: 600 13px var(--mono); letter-spacing: 0.06em; padding: 8px 12px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border-hi); }
+.fs-btn:hover { background: var(--surface-3); }
+.cinema { position: fixed; inset: 0; z-index: 35; background: var(--plane); display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(360px, 460px);
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+.cin-core { position: relative; min-height: 0; background: radial-gradient(ellipse at 50% 55%, #1b1324 0%, var(--plane) 72%); }
+.cin-core .stagewrap { position: absolute; inset: 0; height: auto; min-height: 0; }
+.cin-exit { position: absolute; top: 12px; left: 12px; z-index: 3; }
+.cin-stage-row { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 3; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; pointer-events: none; }
+.cin-stage-row span { font: 600 11px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; text-align: center; padding: 6px 0; border-radius: 6px; background: rgba(8, 8, 8, 0.8); color: var(--text-muted); border: 1px solid var(--border); }
+.cin-stage-row span.on { color: var(--text-primary); border-color: var(--violet); }
+.cin-stage-row span.gate.on { border-color: var(--gold); }
+.cin-side { min-height: 0; display: grid; grid-template-rows: auto auto minmax(0, 1fr); border-left: 1px solid var(--border); background: var(--surface-1); }
+.now { padding: 18px 20px 16px; border-bottom: 1px solid var(--border); }
+.now .eyebrow { font-size: 13px; font-weight: 560; letter-spacing: 0.09em; text-transform: uppercase; color: var(--gold); display: flex; justify-content: space-between; }
+.now h2 { margin: 6px 0 4px; font-size: 1.6rem; line-height: 1.2; font-weight: 650; letter-spacing: -0.01em; }
+.now p { margin: 0 0 10px; color: var(--text-secondary); font-size: 17px; }
+.now .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.now .meter { height: 6px; border-radius: 3px; background: var(--surface-3); margin-top: 12px; overflow: hidden; }
+.now .meter i { display: block; height: 100%; background: var(--violet); width: 0; transition: width 1s linear; }
+.now .next { margin-top: 10px; font-size: 15px; color: var(--text-secondary); }
+.now .next b { color: var(--text-primary); }
+.cin-tabs { display: flex; gap: 6px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+.cin-tabs button { font: 600 14px var(--sans); padding: 8px 14px; border-radius: 8px; color: var(--text-muted); }
+.cin-tabs button[aria-selected="true"] { background: var(--surface-3); color: var(--text-primary); box-shadow: inset 0 -2px 0 var(--violet); }
+.cin-list { overflow-y: auto; overscroll-behavior: contain; padding: 6px 8px 24px; margin: 0; list-style: none; }
+.q { display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; gap: 4px 12px; padding: 12px 10px; border-radius: 10px; align-items: start; }
+.q + .q { border-top: 1px solid var(--border); }
+.q time { font: 600 15px var(--mono); color: var(--text-secondary); padding-top: 2px; }
+.q b { font-size: 16px; font-weight: 640; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.q b .dot { flex: none; }
+.q p { margin: 2px 0 0; font-size: 15px; line-height: 1.5; color: var(--text-secondary); }
+.q .xp { font: 600 15px var(--mono); white-space: nowrap; }
+.q small { display: block; font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+.q.past { opacity: 0.5; }
+.q.now { background: rgba(157, 107, 255, 0.12); border: 1px solid rgba(157, 107, 255, 0.45); opacity: 1; }
+.q.now + .q, .q + .q.now { border-top-color: transparent; }
+.crit { font: 600 11px var(--mono); letter-spacing: 0.06em; padding: 2px 6px; border-radius: 4px; background: var(--surface-3); color: var(--text-primary); }
+.grp { font-size: 13px; font-weight: 560; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); padding: 16px 10px 6px; }
+.task > .chip { align-self: start; }
+.task { display: grid; grid-template-columns: minmax(0, 1fr) max-content; gap: 4px 12px; padding: 12px 10px; border-top: 1px solid var(--border); }
+.task b { font-size: 16px; font-weight: 640; }
+.task p { margin: 2px 0 0; font-size: 15px; color: var(--text-secondary); line-height: 1.5; }
+@media (orientation: landscape) and (max-height: 560px) {
+  .cinema { grid-template-columns: minmax(0, 1fr) minmax(300px, 46%); }
+  .now { padding: 10px 14px 8px; }
+  .now h2 { font-size: 1.15rem; margin: 2px 0; }
+  .now p { font-size: 15px; margin-bottom: 6px; }
+  .now .meter { margin-top: 8px; } .now .next { margin-top: 6px; font-size: 14px; }
+  .cin-tabs { padding: 6px 12px; }
+  .cinema .tag { display: none; }
+  .cin-stage-row span { font-size: 10px; padding: 3px 0; }
+}
+@media (orientation: portrait) and (max-width: 1100px) {
+  .cinema .tag { display: none; }
+  .cinema { grid-template-columns: 1fr; grid-template-rows: minmax(0, 44dvh) minmax(0, 1fr); }
+  .cin-side { border-left: 0; border-top: 1px solid var(--border); }
+  .now { padding: 14px 16px 12px; }
+  .now h2 { font-size: 1.35rem; }
+  .cin-stage-row span { font-size: 10px; padding: 4px 0; }
+}
+
 /* factory */
 .stack { display: flex; height: 14px; border-radius: 4px; overflow: hidden; gap: 2px; margin-top: 12px; }
 .stack i { display: block; height: 100%; }
@@ -234,7 +296,7 @@ pre.code .caret { display: inline-block; width: 8px; height: 15px; background: #
 <div class="app" id="app">
   <header class="head">
     <div class="brand"><i aria-hidden="true">⚔</i>IGRIS <span>Shadow Core</span></div>
-    <div class="clock"><span class="live">LIVE</span><div class="num"><span id="date">—</span><small id="time">—</small></div></div>
+    <div class="clock"><button class="fs-btn" id="fsOpen" type="button" aria-label="Open full screen">⛶ Full screen</button><span class="live">LIVE</span><div class="num"><span id="date">—</span><small id="time">—</small></div></div>
   </header>
 
   <nav class="stages" id="stages" aria-label="Agent Factory ship pipeline"></nav>
@@ -265,10 +327,9 @@ pre.code .caret { display: inline-block; width: 8px; height: 15px; background: #
         <div class="corelabel">IGRIS CORE</div>
         <div id="tags"></div>
         <div class="vision" id="vision" aria-live="polite">
-          <figure data-opt><img src="vision/first.jpg" alt="" onerror="this.closest('figure').remove()"><figcaption>Igris</figcaption></figure>
-          <figure><video src="vision/igris.mp4" poster="vision/igris-poster.jpg" muted loop playsinline preload="auto" aria-label="Igris, the Shadow Knight"></video><figcaption>Igris · <span>the Shadow Knight</span></figcaption></figure>
-          <figure><img src="vision/monarch.jpg" alt="Prat in Shadow Monarch form"><figcaption>Prat · <span>the Shadow Monarch</span></figcaption></figure>
-          <figure><img src="vision/council.jpg" alt="The council on the shadow throne"><figcaption>The Council · <span>arise</span></figcaption></figure>
+          <figure data-v="igris"><video src="vision/igris.mp4" poster="vision/igris-poster.jpg" muted loop playsinline preload="auto" aria-label="Igris, the Shadow Knight"></video><figcaption>Igris · <span>the Shadow Knight</span></figcaption></figure>
+          <figure data-v="monarch"><img src="vision/monarch.jpg" alt="Prat in Shadow Monarch form"><figcaption>Prat · <span>the Shadow Monarch</span></figcaption></figure>
+          <figure data-v="council"><img src="vision/council.jpg" alt="The council on the shadow throne"><figcaption>The Council · <span>arise</span></figcaption></figure>
         </div>
       </div>
       <div class="boxes">
@@ -307,6 +368,21 @@ pre.code .caret { display: inline-block; width: 8px; height: 15px; background: #
 
   <div class="progress"><i id="prog"></i></div>
   <footer class="foot"><span><b>prat</b> · PRAT.EXE</span><span>Tap anything to open it</span><span>IGRIS SHADOW CORE · v4</span></footer>
+</div>
+
+<div class="cinema" id="cinema" hidden>
+  <div class="cin-core" id="cinCore">
+    <button class="fs-btn cin-exit" id="fsClose" type="button">✕ Exit</button>
+    <div class="cin-stage-row" id="cinStages" aria-hidden="true"></div>
+  </div>
+  <aside class="cin-side" aria-label="Quests and tasks">
+    <section class="now" id="now" aria-live="polite"></section>
+    <div class="cin-tabs" role="tablist">
+      <button role="tab" aria-selected="true" id="tabQ" type="button">Quests · 26</button>
+      <button role="tab" aria-selected="false" id="tabT" type="button">Tasks</button>
+    </div>
+    <ol class="cin-list" id="cinList"></ol>
+  </aside>
 </div>
 
 <div class="overlay" id="overlay" hidden><div class="card" id="card" role="dialog" aria-modal="true" aria-labelledby="cardTitle"></div></div>
@@ -659,7 +735,7 @@ function placeTags() {
     el.style.left = p[0] + 'px'; el.style.top = p[1] + 'px'; el.style.opacity = offs ? 0 : p[2] > 0.25 ? 0.45 : 1; el.style.pointerEvents = offs ? 'none' : 'auto';
     return p;
   });
-  if (smallQ.matches) return;
+  if (smallQ.matches || !cinema.hidden) { $('leads').innerHTML = ''; return; }
   const wr = wrap.getBoundingClientRect();
   $('leads').innerHTML = LEADS.map(([sel, ti]) => { const r = document.querySelector(sel).getBoundingClientRect(), p = pos[ti], bx = r.left - wr.left + r.width / 2, by = r.top - wr.top + r.height / 2; return `<line x1="${bx.toFixed(1)}" y1="${by.toFixed(1)}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}" stroke="rgba(255,255,255,.3)"/><circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="#fff"/>`; }).join('');
 }
@@ -746,24 +822,119 @@ document.addEventListener('keydown', e => {
 card.addEventListener('pointermove', e => { if (reduce) return; const r = card.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5; card.style.setProperty('--rx', (-y * 5).toFixed(2) + 'deg'); card.style.setProperty('--ry', (x * 7).toFixed(2) + 'deg'); });
 card.addEventListener('pointerleave', () => { card.style.setProperty('--rx', '0deg'); card.style.setProperty('--ry', '0deg'); });
 
+/* ---------------- full-screen mode: core + quest feed ---------------- */
+// time, expires, name, icon, description, xp, category, critical (from App.jsx)
+const QD = [["06:00", "07:00", "SYSTEM BOOT", "⚡", "Wake up. Stand within 60s. Drink 16oz water.", 50, "Discipline", true], ["06:10", "07:00", "BODY ACTIVATION", "🔥", "10 squats · 10 arm circles · 10 calf raises · 60s stretch", 75, "Fitness", false], ["06:30", "08:00", "MANA CHARGE", "☕", "Celsius/coffee + 8oz water. Zero sugar only.", 25, "Nutrition", false], ["06:45", "07:30", "ARMOR EQUIP", "👔", "Get dressed. Look sharp. Posture check.", 25, "Discipline", false], ["07:00", "08:00", "GATE TRANSIT", "🚗", "Commute. Podcast or audiobook — no music zombiemode.", 30, "Focus", false], ["07:30", "09:00", "DUNGEON OPEN", "🖥️", "Work started. Posture check. 30-min stand reminders ON.", 100, "Discipline", true], ["10:00", "11:00", "WATER RAID I", "💧", "32oz consumed by now. Refill. Light yellow urine.", 50, "Nutrition", false], ["10:30", "11:00", "STAND BREAK I", "🧍", "Stand. Walk. 10 calf raises at desk.", 30, "Fitness", false], ["11:00", "12:00", "EXTRACTION I", "🎯", "Deep work block. Phone on DND. Zero distractions.", 100, "Focus", false], ["12:00", "13:30", "MAIN QUEST MEAL", "🍖", "35-50g protein FIRST. Large veggies. Measured carbs.", 75, "Nutrition", true], ["13:00", "14:00", "WATER RAID II", "💧", "64oz total by now. Refill again.", 50, "Nutrition", false], ["13:30", "14:00", "STAND BREAK II", "🧍", "Walk loop. Stretch hip flexors. Reset posture.", 30, "Fitness", false], ["14:00", "15:30", "EXTRACTION II", "🎯", "Afternoon deep work. Most creative block — use it.", 100, "Focus", false], ["15:00", "16:00", "WATER RAID III", "💧", "96oz consumed. On track for gallon.", 50, "Nutrition", false], ["15:30", "16:00", "STAND BREAK III", "🧍", "Stand, walk, 10 calf raises. Avoid afternoon slump.", 30, "Fitness", false], ["16:00", "17:00", "EXTRACTION III", "🎯", "Final work sprint. Close loops. Clear inbox.", 100, "Focus", false], ["17:00", "18:00", "DUNGEON CLEAR", "🏁", "Work done. Write tomorrow's top 3. Shut laptop.", 75, "Discipline", false], ["17:30", "18:30", "RETURN GATE", "🚗", "Commute home. Decompress. No doom scrolling.", 30, "Discipline", false], ["18:00", "19:00", "RESPAWN POINT", "🏠", "Home. Change clothes. Light snack optional.", 25, "Discipline", false], ["19:00", "20:00", "BOSS PREP", "🍌", "Pre-gym fuel: banana or rice cake + caffeine if needed.", 25, "Nutrition", false], ["19:45", "20:15", "SHADOW WARMUP", "🔥", "5 min cardio warmup. Dynamic stretches. Mental lock-in.", 50, "Fitness", false], ["20:00", "21:30", "SHADOW RAID", "⚔️", "V-TAPER PROTOCOL. Give everything. No phone between sets.", 200, "Fitness", true], ["21:15", "22:00", "RECOVERY RATIONS", "🍗", "25-40g protein post-workout. Real food, not junk.", 75, "Nutrition", true], ["21:30", "22:30", "WATER RAID IV", "💧", "128oz target. Final push for the gallon.", 50, "Nutrition", false], ["22:00", "23:00", "REST PHASE", "🎮", "Shows/games. Stand every 30min. No snacking.", 30, "Discipline", false], ["23:00", "23:59", "SHADOW SLEEP", "🌙", "Wind down. No screens. Lights out.", 200, "Discipline", true]];
+const TASKS = [
+  ['Lane B · The Other Side · due Oct 30', [
+    ['Deploy main to Railway', 'Your deploy agent runs it. You rotate the Nebius key and set the judge password.', ['In progress', 'var(--warning)']],
+    ['Record the demo video', 'Under 3 minutes, public YouTube, from the live build.', ['To do', 'var(--serious)']],
+    ['Check Nebius credits', 'They have to last until judging ends on Dec 15.', ['To do', 'var(--serious)']],
+    ['Fix the Devpost claims', 'Speech is the browser’s, not NVIDIA. No Tavily, no sandboxes.', ['To do', 'var(--serious)']],
+  ]],
+  ['Lane A · Director', [
+    ['Write the one-page Director case', 'Problem, what you built, hours saved, what you’d run next. Lead with Agent Factory and the Radar.', ['To do', 'var(--serious)']],
+  ]],
+  ['S-Rank Gate', [
+    ['Condition 1: SwiftUI MVP', 'Create the project and get one screen running on your phone.', ['Locked', 'var(--critical)']],
+  ]],
+  ['Agent Factory', [
+    ['Push prcasley/agent-factory', 'So the install line works and I can review the agents.', ['Deciding', 'var(--warning)']],
+  ]],
+  ['Done Oct 11', [
+    ['ECHO main has the full app', '123 + 51 tests passing.', ['Done', 'var(--good)']],
+    ['Should-fixes and cap lockout', 'Voice cap, rate limit, no wasted retries, limited sessions.', ['Done', 'var(--good)']],
+    ['Stand-in face swapped', 'Your AI portrait replaced the Obama photo.', ['Done', 'var(--good)']],
+  ]],
+];
+const cinema = $('cinema'), cinCore = $('cinCore'), coreHome = document.querySelector('.core');
+let tab = 'q', lastNowKey = '';
+const mins = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + m; };
+const fmtDur = m => m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`;
+function questState() {
+  const d = new Date(), nm = d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
+  let cur = -1;
+  QD.forEach((q, i) => { if (mins(q[0]) <= nm) cur = i; });
+  return { nm, cur, next: cur + 1 < QD.length ? cur + 1 : -1 };
+}
+function renderNow() {
+  const { nm, cur, next } = questState();
+  const key = cur + ':' + Math.floor(nm);
+  if (key === lastNowKey) return; lastNowKey = key;
+  const n = $('now'), clock = new Date().toTimeString().slice(0, 5);
+  if (cur < 0) {
+    const q = QD[0];
+    n.innerHTML = `<div class="eyebrow"><span>Before boot</span><span class="num">${clock}</span></div><h2>${q[3]} ${esc(q[2])} at ${q[0]}</h2><p>${esc(q[4])}</p><div class="next">Starts in <b>${fmtDur(Math.ceil(mins(q[0]) - nm))}</b>.</div>`;
+    return;
+  }
+  const q = QD[cur], open = mins(q[0]), close = mins(q[1]), live = nm < close;
+  const pct = live ? Math.min(100, (nm - open) / Math.max(1, close - open) * 100) : 100;
+  const nx = next >= 0 ? QD[next] : null;
+  n.innerHTML = `<div class="eyebrow"><span>${live ? 'Now' : 'Last quest'} · ${q[0]}–${q[1]}</span><span class="num">${clock}</span></div>
+    <h2>${q[3]} ${esc(q[2])}</h2><p>${esc(q[4])}</p>
+    <div class="row"><span class="chip" style="--c:${CAT[q[6]]}">${q[6]}</span><span class="chip" style="--c:var(--gold)">${q[5]} XP</span>${q[7] ? '<span class="crit">CRITICAL</span>' : ''}
+    <span class="chip" style="--c:${live ? 'var(--good)' : 'var(--text-muted)'}">${live ? fmtDur(Math.ceil(close - nm)) + ' left' : 'window closed'}</span></div>
+    <div class="meter"><i style="width:${pct.toFixed(1)}%"></i></div>
+    ${nx ? `<div class="next">Next: <b>${nx[3]} ${esc(nx[2])}</b> at ${nx[0]}, in ${fmtDur(Math.ceil(mins(nx[0]) - nm))}</div>` : '<div class="next">That was the last quest. <b>SHADOW SLEEP</b> wins tomorrow’s boot.</div>'}`;
+}
+function renderList(scroll) {
+  const L = $('cinList');
+  if (tab === 'q') {
+    const { cur } = questState();
+    L.innerHTML = QD.map((q, i) => `<li class="q ${i < cur ? 'past' : i === cur ? 'now' : ''}" id="q${i}"><time>${q[0]}</time>
+      <div><b><span class="dot" style="background:${CAT[q[6]]}"></span>${q[3]} ${esc(q[2])}${q[7] ? '<span class="crit">CRITICAL</span>' : ''}</b><p>${esc(q[4])}</p><small>${q[6]} · until ${q[1]}${i < cur ? ' · past' : i === cur ? ' · now' : ''}</small></div>
+      <span class="xp">+${q[5]}</span></li>`).join('');
+    if (scroll && cur >= 0) $('q' + cur).scrollIntoView({ block: 'center' });
+  } else {
+    L.innerHTML = TASKS.map(([g, items]) => `<li class="grp">${esc(g)}</li>` + items.map(([t, d, [st, c]]) => `<li class="task"><div><b>${esc(t)}</b><p>${esc(d)}</p></div><span class="chip" style="--c:${c}">${st}</span></li>`).join('')).join('');
+    if (scroll) L.scrollTop = 0;
+  }
+}
+function setTab(t) { tab = t; $('tabQ').setAttribute('aria-selected', t === 'q'); $('tabT').setAttribute('aria-selected', t === 't'); renderList(true); }
+$('tabQ').addEventListener('click', () => setTab('q'));
+$('tabT').addEventListener('click', () => setTab('t'));
+$('cinStages').innerHTML = STAGES.map((s, i) => `<span id="cs${i}" class="${s.gate ? 'gate' : ''}">${s.n}</span>`).join('');
+function openCinema() {
+  cinema.hidden = false;
+  cinCore.insertBefore(wrap, cinCore.firstChild);
+  document.body.style.overflow = 'hidden';
+  lastNowKey = ''; renderNow(); renderList(true);
+  const el = document.documentElement;
+  if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+}
+function closeCinema() {
+  if (cinema.hidden) return;
+  cinema.hidden = true;
+  coreHome.insertBefore(wrap, coreHome.firstChild);
+  document.body.style.overflow = '';
+  if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+}
+$('fsOpen').addEventListener('click', openCinema);
+$('fsClose').addEventListener('click', closeCinema);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && overlay.hidden) closeCinema(); });
+setInterval(() => { if (!cinema.hidden) { renderNow(); if (tab === 'q') { const { cur } = questState(); const nowEl = document.querySelector('.q.now'); if (!nowEl || nowEl.id !== 'q' + cur) renderList(false); } } }, 1000);
+
 /* ---------------- visions ----------------
    At the deepest point of the dive the timeline holds. After DELAY seconds the first vision rises in,
    stays, then fades slowly while the next one appears. When the last has faded the dive continues. */
-const DELAY = 3, IN = 1.6, STAY = 2.6, OUT = 2.8;
+// Igris at the first dive into the core, Prat at the Gate, all three of us after Ready.
+const IN = 1.6, STAY = 3.2, OUT = 2.8;
+const EVENTS = [
+  { at: 17.6, v: 'igris', delay: 3 },
+  { at: 24.2, v: 'monarch', delay: 1 },
+  { at: 35.9, v: 'council', delay: 1 },
+];
 const visionWrap = $('vision');
-let hold = null, firedThisLoop = false;
+let hold = null; const fired = new Set();
 function visions(rt) {
-  const figs = [...visionWrap.querySelectorAll('figure')];
-  const e = rt - hold.start - DELAY, step = IN + STAY;
-  figs.forEach((f, i) => {
-    const on = e >= i * step && e < i * step + step;
-    if (on !== f.classList.contains('show')) {
-      f.classList.toggle('show', on);
-      const v = f.querySelector('video');
-      if (v) { if (on) { v.currentTime = 0; v.play().catch(() => {}); } else setTimeout(() => v.pause(), OUT * 1000); }
-    }
-  });
-  if (e > figs.length * step + OUT) { hold = null; wrap.classList.remove('visioning'); }
+  const f = visionWrap.querySelector(`[data-v="${hold.v}"]`), e = rt - hold.start - hold.delay;
+  const on = e >= 0 && e < IN + STAY;
+  if (f && on !== f.classList.contains('show')) {
+    f.classList.toggle('show', on);
+    const v = f.querySelector('video');
+    if (v) { if (on) { v.currentTime = 0; v.play().catch(() => {}); } else setTimeout(() => v.pause(), OUT * 1000); }
+  }
+  if (e > IN + STAY + OUT * 0.7) { hold = null; wrap.classList.remove('visioning'); }
 }
 
 /* ---------------- loop ---------------- */
@@ -775,17 +946,19 @@ function frame(now) {
   const dt = lastNow === null ? 0 : Math.min(0.1, (now - lastNow) / 1000); lastNow = now;
   const rt = Math.max(0, (now - T0) / 1000);
   if (!hold) tl += dt;
-  const p = tl % LOOP;
-  if (p < 12) firedThisLoop = false;
-  if (!hold && !firedThisLoop && p >= 17.6 && p < 19) { hold = { start: rt }; firedThisLoop = true; wrap.classList.add('visioning'); }
+  const p = tl % LOOP, loopN = Math.floor(tl / LOOP);
+  if (!hold) for (const ev of EVENTS) {
+    const id = loopN + ':' + ev.v;
+    if (p >= ev.at && p < ev.at + 1 && !fired.has(id)) { fired.add(id); hold = { start: rt, v: ev.v, delay: ev.delay }; wrap.classList.add('visioning'); break; }
+  }
   if (hold) visions(rt);
   camera(tl, rt);
-  if (!overlay.hidden && smallQ.matches) return; // a card fills the phone: pause the core to save battery
+  if (!overlay.hidden && smallQ.matches && cinema.hidden) return; // a card fills the phone: pause the core to save battery
   drawTorus(rt); placeTags();
   const scene = Math.min(2, Math.floor(p / 12)), sp = (p % 12) / 12;
   renderCode(scene, Math.floor(Math.min(1, sp / 0.82) * FILES[scene][1].length));
   const st = Math.min(5, Math.floor(p / 6));
-  if (st !== stageOn) { STAGES.forEach((_, i) => $('st' + i).classList.toggle('on', i === st)); stageOn = st; }
+  if (st !== stageOn) { STAGES.forEach((_, i) => { $('st' + i).classList.toggle('on', i === st); $('cs' + i).classList.toggle('on', i === st); }); stageOn = st; }
   stageBars.forEach((b, i) => { b.style.width = (i < st ? 100 : i === st ? (p % 6) / 6 * 100 : 0) + '%'; });
   $('prog').style.width = (p / LOOP * 100).toFixed(1) + '%';
   if (now - lastLog > 1400) { lastLog = now; pushLog(); }
