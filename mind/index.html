@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Igris Mind Gallery</title>
+<style>
+:root{--bg:#07050d;--card:#120c1f;--edge:#2a1d45;--violet:#9b6bff;--gold:#e9c46a;--text:#f4f1fa;--dim:#b9b0c9}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,#1a1030,var(--bg) 60%);background-color:var(--bg);color:var(--text);font:17px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+main{max-width:980px;margin:0 auto;padding:40px 16px 64px}
+h1{font-size:clamp(28px,6vw,44px);margin:0 0 4px;letter-spacing:.04em}
+h1 span{color:var(--gold)}
+.sub{color:var(--dim);margin:0 0 36px}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.18em;color:var(--violet);margin:36px 0 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+a.card{display:block;text-decoration:none;color:var(--text);background:var(--card);border:1px solid var(--edge);border-radius:14px;padding:16px 18px;transition:transform .2s,border-color .2s,box-shadow .2s}
+a.card:hover{transform:translateY(-3px) rotateX(4deg);border-color:var(--gold);box-shadow:0 10px 30px #9b6bff33}
+a.card.now{border-color:var(--gold)}
+.t{font-weight:650;font-size:18px}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:99px;margin-left:6px;vertical-align:2px;background:#e9c46a22;color:var(--gold)}
+.d{color:var(--dim);font-size:15px;margin-top:4px}
+</style>
+</head>
+<body>
+<main>
+<h1>Igris <span>Mind</span> Gallery</h1>
+<p class="sub">Every version, kept. Gold border = current build.</p>
+
+<h2>Inside Igris · ASCII story</h2>
+<div class="grid">
+  <a class="card now" href="inside-igris.html"><div class="t">Inside Igris<span class="tag">current</span></div><div class="d">Fall (Jul–Oct) + Spring (Apr–Jun) switch, from the Oct 11 memory export.</div></a>
+  <a class="card" href="versions/inside-igris-v2-spring.html"><div class="t">v2 · Spring journey</div><div class="d">Nine chapters built from Gmail drafts and profile.</div></a>
+  <a class="card" href="versions/inside-igris-v1.html"><div class="t">v1 · First mind</div><div class="d">The original ASCII mind visualization.</div></a>
+</div>
+
+<h2>Igris Shadow Core · control room</h2>
+<div class="grid">
+  <a class="card now" href="igris-core.html"><div class="t">Shadow Core<span class="tag">current</span></div><div class="d">Oct 11 memory data, visions, comet, shining star, full-screen quests.</div></a>
+  <a class="card" href="versions/igris-core-v5-visions.html"><div class="t">v5 · Visions &amp; starfield</div><div class="d">Dive visions, shooting stars and comet, on the earlier data.</div></a>
+  <a class="card" href="versions/igris-core-v4-responsive.html"><div class="t">v4 · Responsive</div><div class="d">Matte charts, mobile layout, 3D pop-out detail cards.</div></a>
+  <a class="card" href="versions/igris-core-v2-factory.html"><div class="t">v2 · Agent Factory wired</div><div class="d">First version with the Agent Factory feed.</div></a>
+  <a class="card" href="versions/igris-core-v1.html"><div class="t">v1 · Production studio</div><div class="d">The original control-room layout.</div></a>
+</div>
+
+<h2>Igris Shadow Multiverse · routing graph</h2>
+<div class="grid">
+  <a class="card now" href="igris-multiverse.html"><div class="t">Shadow Multiverse<span class="tag">current</span></div><div class="d">v2 routing-graph style: 20 blocks, 376 links, Oct 11 run replay.</div></a>
+  <a class="card" href="versions/igris-multiverse-v1.html"><div class="t">v1 · First multiverse</div><div class="d">The original Agent Factory graph.</div></a>
+</div>
+</main>
+</body>
+</html>

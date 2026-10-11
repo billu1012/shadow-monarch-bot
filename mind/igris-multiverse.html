@@ -1,0 +1,339 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Igris Shadow Multiverse</title>
+<style>
+/* Layout: an Agent Factory routing graph (inputs → routers → agents → outputs) drawn on one canvas that tilts
+   into 3D per phase, a status bar above it, and four instrument panels below. Single dark look by choice. */
+:root {
+  --bg: #07060a; --panel: #0d0c12; --line: #24222c; --ink: #ffffff; --ink-2: #c9c6d4; --ink-3: #8a8796;
+  --pink: #ff3d8b; --violet: #8b5cf6; --yellow: #ffe14d; --orange: #ff7a3d; --lime: #c6f135; --teal: #3ff0c8; --cyan: #22c3dc; --blue: #4d7cff; --gold: #e3b45e; --red: #ff4d5e;
+  --mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); }
+body { margin: 0; color: var(--ink); font: 14px/1.5 var(--mono); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--violet); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.app { max-width: 1120px; margin: 0 auto; padding-inline: 12px; padding-block: 10px 20px; display: grid; gap: 8px; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; font-size: 11px; color: var(--ink-3); letter-spacing: 0.06em; text-transform: uppercase; }
+.bar b { color: var(--ink); font-weight: 600; letter-spacing: 0; text-transform: none; font-size: 13px; }
+.bar .y { color: var(--yellow); } .bar .p { color: var(--pink); }
+.bar .right { margin-left: auto; color: var(--pink); text-transform: none; letter-spacing: 0; font-size: 12px; }
+.bar .sim { color: var(--bg); background: var(--ink-3); padding: 1px 6px; border-radius: 3px; font-weight: 700; }
+.ctl { display: flex; gap: 6px; }
+.ctl button { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 8px; border: 1px solid var(--line); border-radius: 4px; color: var(--ink-2); background: rgba(7,6,10,.7); }
+.ctl button:hover { color: var(--ink); border-color: var(--ink-3); }
+.graph { position: relative; height: min(88vh, 92vw); min-height: 420px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: radial-gradient(ellipse at 50% 45%, #120e1c 0%, var(--bg) 72%); touch-action: manipulation; }
+.graph canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.phase { position: absolute; left: 14%; top: 14px; padding-left: 10px; border-left: 2px solid var(--c, var(--pink)); pointer-events: none; }
+.phase b { display: block; font-size: clamp(15px, 2.6vw, 22px); letter-spacing: 0.04em; }
+.phase span { color: var(--c, var(--pink)); font-size: 12px; }
+.fsx { position: absolute; top: 10px; right: 10px; z-index: 3; }
+.dash { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.pnl { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; position: relative; min-width: 0; overflow: hidden; }
+.pnl h3 { margin: 0 0 4px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; padding-left: 8px; border-left: 2px solid var(--violet); }
+.pnl h3 small { color: var(--ink-3); font-weight: 400; letter-spacing: 0; text-transform: none; }
+.pnl canvas { width: 100%; display: block; }
+.trace { font-size: 10.5px; line-height: 1.5; color: var(--ink-2); height: 96px; overflow: hidden; margin-top: 4px; }
+.trace div { display: grid; grid-template-columns: 38px 56px 1fr; gap: 6px; white-space: nowrap; }
+.trace div span:first-child { color: var(--ink-3); } .trace div span:nth-child(2) { color: var(--pink); }
+.trace div span:last-child { overflow: hidden; text-overflow: ellipsis; }
+.code { font-size: 10.5px; line-height: 1.5; height: 112px; overflow: hidden; color: var(--ink-2); white-space: pre; margin-top: 4px; }
+.code .k { color: var(--pink); } .code .s { color: var(--yellow); } .code .c { color: var(--ink-3); }
+.code .cur { display: inline-block; width: 6px; height: 11px; background: var(--pink); vertical-align: -1px; }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; font-size: 11px; color: var(--ink-3); }
+.kv b { color: var(--ink); font-weight: 600; text-align: right; }
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: 11px; color: var(--ink-3); }
+.foot b { color: var(--ink); }
+.tip { position: fixed; z-index: 50; pointer-events: none; background: #15131c; border: 1px solid #3a3646; border-radius: 6px; padding: 8px 10px; font-size: 12px; max-width: 280px; box-shadow: 0 12px 30px rgba(0,0,0,.6); }
+.tip span { color: var(--ink-2); display: block; }
+.overlay { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; perspective: 1400px; background: rgba(4, 3, 6, 0.74); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.card { width: min(480px, 100%); max-height: 86vh; overflow-y: auto; background: #110f17; border: 1px solid #3a3646; border-top: 3px solid var(--c, var(--violet)); border-radius: 8px; padding: 20px; position: relative; font-size: 14px; line-height: 1.6; }
+.card .x { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border-radius: 6px; background: #1c1924; font-size: 18px; display: grid; place-items: center; }
+.card h4 { margin: 0 40px 6px 0; font-size: 18px; }
+.card p { margin: 0 0 10px; color: var(--ink-2); }
+.card ul { margin: 0; padding-left: 18px; color: var(--ink-2); }
+.card .lbl { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 12px; }
+.fs .app { max-width: none; padding: 0; }
+.fs .graph { position: fixed; inset: 0; z-index: 30; height: auto; border: 0; border-radius: 0; }
+@media (max-width: 860px) { .dash { grid-template-columns: repeat(2, minmax(0, 1fr)); } .graph { height: min(118vw, 760px); } .phase { left: 12px; } }
+@media (max-width: 420px) { .bar .hide-s { display: none; } }
+</style>
+
+<div class="app">
+  <div class="bar" id="bar"></div>
+  <div class="graph" id="graph">
+    <canvas id="cv" aria-label="Agent Factory routing graph. Tap a block for details."></canvas>
+    <div class="phase" id="phase"><b>01 IDEA IN</b><span>idea · board · repo · memory</span></div>
+    <div class="ctl fsx"><button id="pause" type="button">pause</button><button id="fs" type="button">⛶ full</button></div>
+  </div>
+  <section class="dash">
+    <div class="pnl"><h3>Decision stream <small id="dps">— dec/s</small></h3><canvas id="c1" height="120"></canvas><div class="trace" id="trace"></div></div>
+    <div class="pnl"><h3 style="border-color:var(--pink)">Route lanes <small>7 routes</small></h3><canvas id="c2" height="220"></canvas></div>
+    <div class="pnl"><h3 style="border-color:var(--teal)">Igris core <small>factory v1</small></h3><canvas id="c3" height="110"></canvas><div class="code" id="code"></div></div>
+    <div class="pnl"><h3 style="border-color:var(--lime)">Gate matrix <small>0.85 gate</small></h3><canvas id="c4" height="130"></canvas><div class="kv" id="gkv"></div></div>
+  </section>
+  <footer class="foot"><span><b>prat</b> · CEO · Agent Factory</span><span>Routing is simulated; the trace replays real Oct 11 runs</span><span>IGRIS SHADOW MULTIVERSE · v2</span></footer>
+</div>
+<div class="overlay" id="overlay" hidden><div class="card" id="card" role="dialog" aria-modal="true"></div></div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FONT = getComputedStyle(document.body).fontFamily;
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+/* ---------------- blocks: the factory as a graph (graph space 1080 × 980) ---------------- */
+const C = { pink: '#ff3d8b', violet: '#7a4dff', yellow: '#e8d23c', orange: '#ff7a3d', lime: '#b6d730', teal: '#1fae8c', cyan: '#22b5c9', blue: '#3a6df0', olive: '#a99b2f', grey: '#7d8190', green: '#1f7a68' };
+const B = [];
+function block(id, col, y, name, color, rows, info) { const xs = [20, 555, 735, 910], ws = [128, 158, 152, 150], zs = [0, -60, -120, -180]; B.push({ id, col, x: xs[col], y, w: ws[col], z: zs[col], name, color, rows, info }); }
+block('idea', 0, 88, 'idea', C.green, ['the_ask', 'context', 'deadline', 'owner'], 'What comes in: your ask, its context and deadline.');
+block('board', 0, 242, 'factory_board', C.green, ['doing', 'done', 'blocked', 'agents', 'standup'], 'The live board: every agent reports doing, done or blocked.');
+block('repo', 0, 424, 'repo', C.green, ['branch', 'tests', 'diff', 'ci'], 'The codebase the agents work in.');
+block('memory', 0, 575, 'memory', C.olive, ['export', 'drafts', 'lanes', 'guard', 'stale'], 'What I know about you: the Oct 11 memory export, drafts, lanes and the guard.');
+block('last', 0, 756, 'last_run', C.green, ['launch_review', 'verdict', 'holds', 'cost'], 'The previous run, so nothing is repeated.');
+block('state', 1, 86, 'state · pack', C.pink, ['goal', 'board', 'repo', 'memory', 'cached'], 'Igris packs everything an agent needs into one typed state.');
+block('spec', 1, 282, 'spec · typed', C.pink, ['problem', 'users', 'metric', 'non_goals', 'cuts'], 'product-manager: a one-page spec. Problem, users, success metric, non-goals, scope cuts.');
+block('rank', 1, 478, 'rank · priority', C.cyan, ['low', 'medium', 'high', 'urgent', 'trend'], 'What goes first. The hackathon outranks everything until Oct 30.');
+block('gate', 1, 674, 'gate · 0.85', C.lime, ['passed', 'hold', 'human', 'override'], 'The launch gate: privacy, cost and launch reviews. Any block stops the ship.');
+block('reviewq', 1, 870, 'review_q · 6/6', C.yellow, ['required', 'queued', 'typed_json', 'schema', 'retries'], 'code-reviewer: nothing lands without review. Blocking, Should fix, Nit, verdict.');
+block('igris', 2, 120, 'igris · decide', C.violet, ['state_tok', 'no_chat', 'confidence', 'options', 'output', 'max_out'], 'Me, the engineering manager: I route each job to the right agents and say who goes next.');
+block('build', 2, 317, 'build · write', C.orange, ['frontend', 'backend', 'tests', 'diff', 'words'], 'frontend-engineer and backend-engineer: small diffs, honest failure paths, 400px-ready.');
+block('research', 2, 513, 'research', C.orange, ['sources', 'notes', 'prior_art', 'pricing', 'applied'], 'ux-researcher and market-researcher: evidence and sources, never invented.');
+block('score', 2, 709, 'score', C.orange, ['privacy', 'cost', 'launch', 'qa', 'verdict'], 'privacy-security-reviewer, cost-controller, launch-manager and qa-engineer score the work.');
+block('human', 2, 905, 'prat · review', C.blue, ['budget', 'edits', 'reads', 'approvals'], 'You. Every push, deploy and dollar waits for your approval.');
+block('oplan', 3, 96, 'out.plan', C.teal, ['design_doc', 'diffs', 'owner', 'next'], 'tech-lead: the design doc and a plan of small diffs, each with an owner and a test.');
+block('ocode', 3, 292, 'out.code', C.teal, ['passed', 'review', 'valid', 'merged'], 'Code that passed review and QA.');
+block('overdict', 3, 488, 'out.verdict', C.teal, ['go', 'conditions', 'no_go', 'flaky'], 'launch-manager: Go, Go with conditions, or No go.');
+block('drafts', 3, 684, 'drafts/', C.olive, ['readme', 'devpost', 'video', 'release_notes'], 'content-strategist: README, Devpost, demo video script, release notes.');
+block('queue', 3, 880, 'queue/', C.grey, ['main.json', 'deploy', 'approved', 'cleared'], 'release-engineer: the ship queue. Deploys wait for you.');
+const byId = Object.fromEntries(B.map(b => [b.id, b]));
+const HEAD = 14, ROW = 11.5;
+B.forEach(b => { b.h = HEAD + b.rows.length * ROW + 4; b.vals = b.rows.map(() => +(rnd() * 1.6).toFixed(3)); b.bars = b.rows.map(() => 0.25 + rnd() * 0.65); });
+const port = (b, i, side) => [side ? b.x + b.w : b.x, b.y + HEAD + i * ROW + ROW / 2, b.z];
+const RAIL = 307;
+
+const L = [];
+function link(a, ai, b, bi, viaRail) { L.push({ a, ai, b, bi, viaRail }); }
+const cols = [0, 1, 2, 3].map(c => B.filter(b => b.col === c));
+for (const t of cols[1]) t.rows.forEach((_, ti) => { for (let k = 0; k < 9; k++) { const s = cols[0][Math.floor(rnd() * cols[0].length)]; link(s.id, Math.floor(rnd() * s.rows.length), t.id, ti, true); } });
+for (const t of cols[2]) t.rows.forEach((_, ti) => { for (let k = 0; k < 4; k++) { const s = cols[1][Math.floor(rnd() * cols[1].length)]; link(s.id, Math.floor(rnd() * s.rows.length), t.id, ti, false); } });
+for (const t of cols[3]) t.rows.forEach((_, ti) => { for (let k = 0; k < 3; k++) { const s = cols[2][Math.floor(rnd() * cols[2].length)]; link(s.id, Math.floor(rnd() * s.rows.length), t.id, ti, false); } });
+function bez(p0, p1, p2, p3, t) { const u = 1 - t; return p0.map((_, k) => u * u * u * p0[k] + 3 * u * u * t * p1[k] + 3 * u * t * t * p2[k] + t * t * t * p3[k]); }
+L.forEach(l => {
+  const a = port(byId[l.a], l.ai, 1), b = port(byId[l.b], l.bi, 0), pts = [];
+  if (l.viaRail) {
+    const ry = a[1] + (b[1] - a[1]) * (0.3 + rnd() * 0.4), r = [RAIL, ry, (a[2] + b[2]) / 2];
+    for (let i = 0; i <= 10; i++) pts.push(bez(a, [a[0] + 90, a[1], a[2]], [RAIL - 70, ry, r[2]], r, i / 10));
+    for (let i = 1; i <= 14; i++) pts.push(bez(r, [RAIL + 90, ry, r[2]], [b[0] - 120, b[1], b[2]], b, i / 14));
+  } else { const dx = (b[0] - a[0]) * 0.55; for (let i = 0; i <= 16; i++) pts.push(bez(a, [a[0] + dx, a[1], a[2]], [b[0] - dx, b[1], b[2]], b, i / 16)); }
+  l.pts = pts; l.off = rnd(); l.sp = 0.25 + rnd() * 0.35;
+});
+
+/* ---------------- phases ---------------- */
+const PH = [
+  { n: '01 IDEA IN', sub: 'idea · board · repo · memory', c: '#ff3d8b', from: ['idea', 'board', 'repo', 'memory', 'last'], to: ['state', 'spec'], tag: ['spec · typed', 'product-manager · one page'], yaw: -0.5, pitch: 0.5, roll: -0.28 },
+  { n: '02 IGRIS ROUTES', sub: 'typed spec · no prose', c: '#9b7bff', from: ['state', 'spec', 'rank'], to: ['igris', 'oplan'], tag: ['igris · decide', '15 agents · who goes next'], yaw: 0.45, pitch: 0.55, roll: 0.22 },
+  { n: '03 AGENTS BUILD', sub: 'only the work that needs code', c: '#ffe14d', from: ['spec', 'state', 'igris'], to: ['build', 'research', 'ocode', 'drafts'], tag: ['build · write', 'small diffs · each with a test'], yaw: -0.4, pitch: 0.6, roll: -0.3 },
+  { n: '04 GATE HOLDS', sub: 'privacy · cost · launch · 0.85', c: '#ff6a3d', from: ['build', 'gate', 'reviewq'], to: ['score', 'gate', 'overdict'], tag: ['gate · 0.85', 'any block stops the ship'], yaw: 0.5, pitch: 0.55, roll: 0.25 },
+  { n: '05 PRAT REVIEWS', sub: 'you read the diff · you approve', c: '#ffffff', from: ['reviewq', 'score', 'gate'], to: ['human', 'queue'], tag: ['prat · review', 'pushes · deploys · spend'], yaw: 0, pitch: 0, roll: 0, flat: true },
+  { n: '06 RELEASE ACTS', sub: 'queue/ main.json · deploy waits on you', c: '#3ff0c8', from: ['human', 'igris', 'build'], to: ['queue', 'ocode', 'drafts', 'overdict'], tag: ['queue/ main.json', 'release-engineer · ships'], yaw: -0.35, pitch: 0.5, roll: -0.2 },
+];
+const PHASE_T = 7.5;
+let phase = 0, pt = 0, paused = false;
+
+/* ---------------- canvas + camera ---------------- */
+const gw = $('graph'), cv = $('cv'), g = cv.getContext('2d');
+let W = 800, H = 800, PR = 1;
+function size() { W = gw.clientWidth; H = gw.clientHeight; PR = Math.min(2, devicePixelRatio || 1); cv.width = Math.round(W * PR); cv.height = Math.round(H * PR); }
+size(); new ResizeObserver(size).observe(gw);
+const cam = { yaw: 0, pitch: 0, roll: 0, zoom: 1, fx: 540, fy: 490 };
+function P(p) {
+  const x = p[0] - cam.fx, y = p[1] - cam.fy, z = p[2] + 90;
+  const cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch), cr = Math.cos(cam.roll), sr = Math.sin(cam.roll);
+  const x1 = x * cy - z * sy, z1 = x * sy + z * cy;
+  const y1 = y * cp - z1 * sp, z2 = y * sp + z1 * cp;
+  const x2 = x1 * cr - y1 * sr, y2 = x1 * sr + y1 * cr;
+  const D = 1500, s = D / (D + z2), k = Math.min(W / 1080, H / 990) * 0.96 * cam.zoom;
+  return [W / 2 + x2 * s * k, H / 2 + y2 * s * k, z2];
+}
+const sm = x => x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x);
+function camera() {
+  const ph = PH[phase], ids = [...ph.to, ph.from[0]];
+  const cx = ids.reduce((s, i) => s + byId[i].x + byId[i].w / 2, 0) / ids.length, cyy = ids.reduce((s, i) => s + byId[i].y + byId[i].h / 2, 0) / ids.length;
+  const k = (ph.flat || reduce) ? 0 : sm((pt - 2.0) / 1.4) * (1 - sm((pt - (PHASE_T - 1.1)) / 1.1));
+  cam.yaw = ph.yaw * k; cam.pitch = ph.pitch * k; cam.roll = ph.roll * k; cam.zoom = 1 + 0.75 * k;
+  cam.fx = 540 + (cx - 540) * k; cam.fy = 490 + (cyy - 490) * k;
+}
+
+/* ---------------- draw graph ---------------- */
+let quads = [];
+function drawBlock(b, act) {
+  const p00 = P([b.x, b.y, b.z]), p10 = P([b.x + b.w, b.y, b.z]), p01 = P([b.x, b.y + b.h, b.z]), p11 = P([b.x + b.w, b.y + b.h, b.z]);
+  quads.push([b, [p00, p10, p11, p01]]);
+  g.setTransform(PR * (p10[0] - p00[0]) / b.w, PR * (p10[1] - p00[1]) / b.w, PR * (p01[0] - p00[0]) / b.h, PR * (p01[1] - p00[1]) / b.h, PR * p00[0], PR * p00[1]);
+  g.globalAlpha = act ? 1 : 0.62;
+  g.fillStyle = 'rgba(10,9,14,0.92)'; g.fillRect(0, 0, b.w, b.h);
+  g.strokeStyle = b.color; g.lineWidth = act ? 1.2 : 0.6; g.strokeRect(0, 0, b.w, b.h);
+  g.fillStyle = b.color; g.fillRect(0, 0, b.w, HEAD);
+  g.fillStyle = '#fff'; g.font = `700 8.5px ${FONT}`; g.textBaseline = 'middle'; g.textAlign = 'left'; g.fillText(b.name, 5, HEAD / 2 + 0.5);
+  g.font = `500 6.8px ${FONT}`;
+  b.rows.forEach((r, i) => {
+    const y = HEAD + i * ROW + 2;
+    g.fillStyle = b.color + '55'; g.fillRect(6, y + 1, (b.w - 50) * b.bars[i], ROW - 3);
+    g.fillStyle = '#e9e6f2'; g.fillText(r, 9, y + ROW / 2 - 0.5);
+    g.textAlign = 'right'; g.fillStyle = '#c9c6d4'; g.fillText(b.vals[i].toFixed(3), b.w - 6, y + ROW / 2 - 0.5); g.textAlign = 'left';
+    g.fillStyle = b.color; g.beginPath(); g.arc(0, y + ROW / 2 - 1, 1.6, 0, 6.283); g.arc(b.w, y + ROW / 2 - 1, 1.6, 0, 6.283); g.fill();
+  });
+  g.globalAlpha = 1; g.setTransform(PR, 0, 0, PR, 0, 0);
+}
+function sparkle(x, y, r, col, a) {
+  g.globalAlpha = a; const gr = g.createRadialGradient(x, y, 0, x, y, r * 3); gr.addColorStop(0, col); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(x - r * 3, y - r * 3, r * 6, r * 6);
+  g.strokeStyle = '#fff'; g.lineWidth = 1; g.beginPath(); g.moveTo(x - r * 2.2, y); g.lineTo(x + r * 2.2, y); g.moveTo(x, y - r * 2.2); g.lineTo(x, y + r * 2.2); g.stroke(); g.globalAlpha = 1;
+}
+const BG = Array.from({ length: 140 }, () => [Math.random(), Math.random(), Math.random() * 0.5 + 0.1]);
+let T = 0;
+function drawGraph() {
+  g.setTransform(PR, 0, 0, PR, 0, 0); g.clearRect(0, 0, W, H);
+  for (const [x, y, a] of BG) { g.fillStyle = `rgba(255,255,255,${a * (0.6 + 0.4 * Math.sin(T + x * 40))})`; g.fillRect(x * W, y * H, 1.2, 1.2); }
+  const ph = PH[phase], fromS = new Set(ph.from), toS = new Set(ph.to);
+  g.strokeStyle = 'rgba(255,60,90,0.09)'; g.lineWidth = 1;
+  g.beginPath(); for (let i = 0; i < 9; i++) { const a = P([540 + Math.cos(i * 0.7) * 520, 490 + Math.sin(i * 1.3) * 420, -260]), b = P([540 + Math.cos(i * 0.7 + 2.4) * 520, 490 + Math.sin(i * 1.3 + 2) * 420, -260]); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); } g.stroke();
+  const r0 = P([RAIL, 60, -30]), r1 = P([RAIL, 960, -30]); g.strokeStyle = 'rgba(63,240,200,0.35)'; g.lineWidth = 2; g.beginPath(); g.moveTo(r0[0], r0[1]); g.lineTo(r1[0], r1[1]); g.stroke();
+  const proj = L.map(l => l.pts.map(P));
+  g.strokeStyle = 'rgba(220,220,235,0.13)'; g.lineWidth = 0.8; g.beginPath();
+  proj.forEach(pp => { g.moveTo(pp[0][0], pp[0][1]); for (let i = 1; i < pp.length; i++) g.lineTo(pp[i][0], pp[i][1]); }); g.stroke();
+  const grow = Math.min(1, pt / 1.2);
+  g.globalCompositeOperation = 'lighter';
+  L.forEach((l, k) => {
+    const on = (fromS.has(l.a) && toS.has(l.b)) || (fromS.has(l.a) && fromS.has(l.b)) || (toS.has(l.a) && toS.has(l.b));
+    if (!on) return;
+    const pp = proj[k], n = Math.max(2, Math.floor(pp.length * grow));
+    g.strokeStyle = ph.c; g.globalAlpha = 0.32; g.lineWidth = 3; g.beginPath(); g.moveTo(pp[0][0], pp[0][1]); for (let i = 1; i < n; i++) g.lineTo(pp[i][0], pp[i][1]); g.stroke();
+    g.globalAlpha = 0.95; g.lineWidth = 1.1; g.stroke();
+    if (!reduce && grow >= 1 && k % 3 === 0) { const t = (T * l.sp + l.off) % 1, i = Math.min(pp.length - 1, Math.floor(t * (pp.length - 1))); sparkle(pp[i][0], pp[i][1], 1.6, ph.c, 0.9); }
+  });
+  g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  quads = [];
+  B.slice().sort((a, b) => P([b.x, b.y, b.z])[2] - P([a.x, a.y, a.z])[2]).forEach(b => drawBlock(b, fromS.has(b.id) || toS.has(b.id)));
+  const tb = byId[ph.to[0]], tp = P([tb.x + tb.w + 6, tb.y - 4, tb.z]);
+  g.font = `600 12px ${FONT}`; const w1 = Math.max(g.measureText(ph.tag[0]).width, g.measureText(ph.tag[1]).width * 0.9) + 18;
+  const tx = Math.min(W - w1 - 6, Math.max(6, tp[0])), ty = Math.max(40, Math.min(H - 46, tp[1]));
+  g.fillStyle = 'rgba(8,7,12,0.92)'; g.fillRect(tx, ty, w1, 36); g.strokeStyle = ph.c; g.lineWidth = 1; g.strokeRect(tx, ty, w1, 36);
+  g.fillStyle = '#fff'; g.textBaseline = 'top'; g.fillText(ph.tag[0], tx + 9, ty + 5);
+  g.font = `11px ${FONT}`; g.fillStyle = ph.c === '#ffffff' ? '#c9c6d4' : ph.c; g.fillText(ph.tag[1], tx + 9, ty + 20); g.textBaseline = 'alphabetic';
+}
+
+/* ---------------- instrument panels (simulated motion, real trace) ---------------- */
+const TRACE = [
+  ['idea', 'launch-review · The Other Side'], ['qa', '112/112 + 51/51 passed'], ['privacy', 'no blockers · 6 should-fix'], ['cost', 'GPU risk flagged'], ['launch', 'Go with conditions'],
+  ['spec', '6 should-fixes · small diffs'], ['build', 'voice cap · rate limit · no 4xx retry'], ['review', 'approve'], ['qa', '119 passed'], ['release', 'main @ 299becd'],
+  ['spec', 'cap lockout · limited session'], ['qa', '123 passed'], ['release', 'main @ 083b8ea'], ['prat', 'approved · stand-in face'], ['release', 'main @ bcbf268'],
+];
+let traceN = 0, decisions = 0, cost = 0, tick = 0;
+function pushTrace() {
+  traceN++; const rows = [];
+  for (let i = Math.max(0, traceN - 6); i < traceN; i++) { const [a, b] = TRACE[i % TRACE.length]; rows.push(`<div><span>${String(i % 60).padStart(2, '0')}.${String((i * 37) % 100).padStart(2, '0')}</span><span>${a}</span><span>${esc(b)}</span></div>`); }
+  $('trace').innerHTML = rows.join('');
+}
+const CODE = `from factory import ship
+igris = EM("shadow-core")
+state = load("board.json")
+r = igris.route(state, NEXT_STEP)
+if r.confidence >= 0.85:
+    queue(r.diff)   # prat approves
+else:
+    hold(r)         # gate holds`;
+function hl(src) {
+  return src.split('\n').map(line => {
+    const ci = line.indexOf('#'), code = ci >= 0 ? line.slice(0, ci) : line, com = ci >= 0 ? line.slice(ci) : '';
+    const c = esc(code).replace(/"([^"]*)"/g, '\u0001$1\u0002').replace(/\b(from|import|if|else)\b/g, '<span class="k">$1</span>').replace(/\u0001/g, '<span class="s">"').replace(/\u0002/g, '"</span>');
+    return c + (com ? `<span class="c">${esc(com)}</span>` : '');
+  }).join('\n');
+}
+function panelSize(c) { const r = c.getBoundingClientRect(), pr = Math.min(2, devicePixelRatio || 1), hh = +c.getAttribute('height'); if (c._w !== r.width) { c._w = r.width; c.width = Math.round(r.width * pr); c.height = Math.round(hh * pr); c.style.height = hh + 'px'; } const x = c.getContext('2d'); x.setTransform(pr, 0, 0, pr, 0, 0); return [x, r.width, hh]; }
+const heat = Array.from({ length: 56 * 6 }, () => Math.random());
+const lanes = ['spec', 'design', 'build', 'review', 'qa', 'gate', 'ready'], laneCol = ['#ff3d8b', '#9b7bff', '#ffe14d', '#22c3dc', '#4d7cff', '#ff6a3d', '#3ff0c8'];
+const laneOfPhase = ['spec', 'design', 'build', 'gate', 'review', 'ready'];
+const thr = Array.from({ length: 48 }, () => 0.3 + Math.random() * 0.7);
+function panels() {
+  const gateHold = phase === 3;
+  let [x, w, h] = panelSize($('c1'));
+  x.clearRect(0, 0, w, h);
+  x.strokeStyle = '#9b7bff'; x.lineWidth = 1.4; x.beginPath(); for (let i = 0; i <= w; i += 3) { const y = 22 + Math.sin(i * 0.05 + T * 2) * 6 + Math.sin(i * 0.13 + T) * 3; i ? x.lineTo(i, y) : x.moveTo(i, y); } x.stroke();
+  x.strokeStyle = '#ff3d8b'; x.beginPath(); for (let i = 0; i <= w; i += 3) { const y = 58 + (Math.sin(i * 0.09 - T * 3) > 0.3 ? -8 : 0); i ? x.lineTo(i, y) : x.moveTo(i, y); } x.stroke();
+  x.fillStyle = '#8a8796'; x.font = `10px ${FONT}`; x.fillText('igris', 0, 10); x.fillText('agents', 0, 46);
+  const cw = w / 56; for (let i = 0; i < heat.length; i++) { const c = i % 56, r = Math.floor(i / 56), v = (heat[i] + T * 0.15 + c * 0.01) % 1; x.fillStyle = ['#2a1d5c', '#5b2bd9', '#ff3d8b', '#ffe14d', '#3a6df0'][Math.floor(v * 5)]; x.fillRect(c * cw, 76 + r * 7, cw - 0.6, 6); }
+  $('dps').textContent = `${380 + Math.round(Math.sin(T) * 20)} dec/s`;
+  [x, w, h] = panelSize($('c2')); x.clearRect(0, 0, w, h);
+  lanes.forEach((ln, i) => {
+    const y = 6 + i * 15, act = ln === laneOfPhase[phase];
+    x.fillStyle = act ? '#fff' : '#8a8796'; x.font = `10px ${FONT}`; x.fillText((act ? '● ' : '· ') + ln, 0, y + 9);
+    for (let k = 0; k < 3; k++) { const s = ((T * (0.08 + i * 0.01) + k * 0.33 + i * 0.17) % 1), bx = 70 + s * (w - 110); x.fillStyle = laneCol[i]; x.globalAlpha = act ? 1 : 0.55; x.fillRect(bx, y + 3, 14 + k * 8, 4); }
+    x.globalAlpha = 1; x.fillStyle = '#c9c6d4'; x.textAlign = 'right'; x.fillText(String(14 + ((i * 7 + Math.floor(T * 2)) % 30)), w, y + 9); x.textAlign = 'left';
+  });
+  if (Math.random() < 0.15) { thr.shift(); thr.push(0.3 + Math.random() * 0.7); }
+  const bw = (w - 4) / thr.length; thr.forEach((v, i) => { x.fillStyle = i === thr.length - 1 ? '#fff' : '#ff3d8b'; x.fillRect(2 + i * bw, h - 4 - v * 70, bw - 1.2, v * 70); });
+  x.fillStyle = '#fff'; x.font = `700 16px ${FONT}`; x.textAlign = 'right'; x.fillText((40 + Math.sin(T * 0.7) * 8).toFixed(1), w, 132); x.textAlign = 'left'; x.font = `10px ${FONT}`; x.fillStyle = '#8a8796'; x.fillText('throughput', 0, 132);
+  [x, w, h] = panelSize($('c3')); x.clearRect(0, 0, w, h);
+  const cx = w / 2, cy = h / 2, R = Math.min(h * 0.44, w * 0.3);
+  x.strokeStyle = 'rgba(155,123,255,0.4)'; x.beginPath(); x.arc(cx, cy, R, 0, 6.283); x.stroke();
+  for (let i = 0; i < 90; i++) { const yy = 1 - (i / 89) * 2, rr = Math.sqrt(1 - yy * yy), th = i * 2.4 + T * 0.4, z = Math.sin(th) * rr; x.fillStyle = i % 7 === 0 ? '#ff3d8b' : `rgba(220,215,255,${0.35 + z * 0.5})`; x.fillRect(cx + Math.cos(th) * rr * R, cy + yy * R, 1.8, 1.8); }
+  const gr = x.createRadialGradient(cx, cy, 0, cx, cy, R); gr.addColorStop(0, 'rgba(155,123,255,0.45)'); gr.addColorStop(1, 'rgba(155,123,255,0)'); x.fillStyle = gr; x.fillRect(cx - R, cy - R, 2 * R, 2 * R);
+  x.fillStyle = '#8a8796'; x.font = `10px ${FONT}`; x.fillText('conf', 2, 12); x.fillText('step', 2, 52); x.textAlign = 'right'; x.fillText('agents', w - 2, 12); x.fillText('ships', w - 2, 52);
+  x.fillStyle = '#fff'; x.font = `700 13px ${FONT}`; x.fillText('15', w - 2, 28); x.fillText('3', w - 2, 68); x.textAlign = 'left'; x.fillText(gateHold ? '0.71' : '0.94', 2, 28); x.fillText(`${phase + 1}/6`, 2, 68);
+  x.fillStyle = '#3ff0c8'; x.font = `10px ${FONT}`; x.textAlign = 'center'; x.fillText(['READING STATE..', 'ROUTING..', 'AGENTS BUILDING..', 'GATE HOLDING..', 'AWAITING PRAT..', 'RELEASING..'][phase], cx, h - 2); x.textAlign = 'left';
+  const n = Math.floor(Math.min(1, pt / (PHASE_T * 0.8)) * CODE.length);
+  $('code').innerHTML = hl(CODE.slice(0, n)) + '<span class="cur"></span>';
+  [x, w, h] = panelSize($('c4')); x.clearRect(0, 0, w, h);
+  const gx = w / 2, gy = 26, s = Math.min(w / 18, 9);
+  const iso = (i, j, k) => [gx + (i - j) * s, gy + (i + j) * s * 0.5 - k * s * 0.9];
+  for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) { const [a, b] = iso(i, j, 0), [c, d] = iso(i + 1, j, 0), [e, f] = iso(i + 1, j + 1, 0), [m, o] = iso(i, j + 1, 0); x.fillStyle = (i + j) % 2 ? '#c6f135' : '#b2dc2c'; x.beginPath(); x.moveTo(a, b); x.lineTo(c, d); x.lineTo(e, f); x.lineTo(m, o); x.fill(); }
+  const cubes = [[5, 1, '#e3b45e'], [6, 1, '#e3b45e'], [5, 0, '#e3b45e']].concat(gateHold ? [[2, 4, '#ff4d5e'], [3, 4, '#ff4d5e'], [2, 5, '#ff4d5e']] : []);
+  cubes.forEach(([i, j, col]) => { const [a, b] = iso(i, j, 1), [c, d] = iso(i + 1, j, 1), [e, f] = iso(i + 1, j + 1, 1), [m, o] = iso(i, j + 1, 1); x.fillStyle = col; x.beginPath(); x.moveTo(a, b); x.lineTo(c, d); x.lineTo(e, f); x.lineTo(m, o); x.fill(); x.fillStyle = 'rgba(0,0,0,0.3)'; x.beginPath(); x.moveTo(m, o); x.lineTo(e, f); x.lineTo(e, f + s * 0.9); x.lineTo(m, o + s * 0.9); x.fill(); });
+  x.fillStyle = gateHold ? '#ff4d5e' : '#c6f135'; x.font = `700 22px ${FONT}`; x.fillText(gateHold ? '0.71' : '0.94', 2, h - 6); x.font = `10px ${FONT}`; x.fillStyle = '#8a8796'; x.fillText('confidence', 2, h - 30);
+  $('gkv').innerHTML = `<span>passed</span><b>${gateHold ? 3 : 6}</b><span>held</span><b style="color:${gateHold ? '#ff4d5e' : '#fff'}">${gateHold ? 3 : 0}</b><span>needs prat</span><b>1</b>`;
+}
+
+/* ---------------- status bar ---------------- */
+function bar() {
+  $('bar').innerHTML = `<span>IGRIS · FACTORY <b>v1</b></span><span class="hide-s">blocks <b>20</b></span><span>links <b>${L.length}</b></span><span>agents <b>15</b></span><span>decisions <b class="p">${decisions.toLocaleString()}</b></span><span class="hide-s">cost <b class="y">$${cost.toFixed(3)}</b></span><span>tick <b>${String(tick).padStart(4, '0')}</b></span><span class="sim">SIM</span><span class="right">igris · prat.exe</span>`;
+}
+
+/* ---------------- interaction ---------------- */
+function inQuad(px, py, q) { let ins = false; for (let i = 0, j = 3; i < 4; j = i++) { const [xi, yi] = q[i], [xj, yj] = q[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) ins = !ins; } return ins; }
+function hitBlock(e) { const r = cv.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top; for (let i = quads.length - 1; i >= 0; i--) if (inQuad(px, py, quads[i][1])) return quads[i][0]; return null; }
+cv.addEventListener('pointermove', e => { const b = hitBlock(e), tip = $('tip'); if (!b) { tip.hidden = true; cv.style.cursor = ''; return; } cv.style.cursor = 'pointer'; tip.innerHTML = `<b>${esc(b.name)}</b><span>${esc(b.info)}</span>`; tip.hidden = false; tip.style.left = Math.min(innerWidth - tip.offsetWidth - 8, e.clientX + 14) + 'px'; tip.style.top = Math.min(innerHeight - tip.offsetHeight - 8, e.clientY + 14) + 'px'; });
+cv.addEventListener('pointerleave', () => { $('tip').hidden = true; });
+cv.addEventListener('click', e => {
+  const b = hitBlock(e); if (!b) return; const used = PH.filter(p => p.from.includes(b.id) || p.to.includes(b.id)).map(p => p.n);
+  $('card').style.setProperty('--c', b.color);
+  $('card').innerHTML = `<button class="x" aria-label="Close">×</button><h4>${esc(b.name)}</h4><p>${esc(b.info)}</p><div class="lbl">Fields</div><p>${b.rows.map(esc).join(' · ')}</p><div class="lbl">Lights up in</div><ul>${used.map(u => `<li>${esc(u)}</li>`).join('') || '<li>—</li>'}</ul>`;
+  $('overlay').hidden = false; $('card').querySelector('.x').onclick = () => { $('overlay').hidden = true; };
+  if (!reduce) $('card').animate([{ transform: 'scale(.7) rotateY(-25deg)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.2,.8,.2,1)' });
+});
+$('overlay').addEventListener('click', e => { if (e.target.id === 'overlay') $('overlay').hidden = true; });
+$('pause').onclick = () => { paused = !paused; $('pause').textContent = paused ? 'play' : 'pause'; };
+$('fs').onclick = () => { const on = !document.body.classList.contains('fs'); document.body.classList.toggle('fs', on); $('fs').textContent = on ? '✕ exit' : '⛶ full'; if (on && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {}); };
+addEventListener('keydown', e => { if (e.key === 'Escape') { $('overlay').hidden = true; if (document.body.classList.contains('fs')) $('fs').click(); } if (e.key === 'ArrowRight') { phase = (phase + 1) % PH.length; pt = 0; setPhase(); } });
+function setPhase() { const ph = PH[phase]; $('phase').style.setProperty('--c', ph.c); $('phase').innerHTML = `<b>${ph.n}</b><span>${esc(ph.sub)}</span>`; }
+
+/* ---------------- loop ---------------- */
+let last = null, lastSlow = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = last === null ? 0 : Math.min(0.1, (now - last) / 1000); last = now;
+  if (!paused) { T += dt; pt += dt; if (pt > PHASE_T) { pt = 0; phase = (phase + 1) % PH.length; setPhase(); } decisions += Math.round(dt * 380); cost += dt * 0.0042; }
+  camera(); drawGraph();
+  if (now - lastSlow > 66) { lastSlow = now; tick++; panels(); bar(); }
+  if (Math.floor(T / 1.3) >= traceN) pushTrace();
+}
+setPhase(); pushTrace(); requestAnimationFrame(frame);
+})();
+</script>

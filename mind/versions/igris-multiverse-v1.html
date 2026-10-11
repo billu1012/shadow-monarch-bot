@@ -1,0 +1,371 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Igris Shadow Multiverse</title>
+<style>
+/* Layout: a 3D routing graph of the Agent Factory (each department its own small universe around the core),
+   with the job being routed, the pipeline and the run log beside it. Shell = Monarch chrome, data = Matte palette. */
+:root {
+  --plane: #080808; --surface-1: #121212; --surface-2: #1a1a1a; --surface-3: #222222;
+  --border: rgba(255, 255, 255, 0.10); --border-hi: rgba(255, 255, 255, 0.22);
+  --text-primary: #ffffff; --text-secondary: #c9c9c4; --text-muted: #8a8a84;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-7: #9085e9;
+  --good: #0ca30c; --warning: #fab219; --serious: #ec835a; --critical: #d03b3b;
+  --violet: #9d6bff; --gold: #e3b45e;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--plane); }
+body { margin: 0; color: var(--text-primary); font: 17px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+:focus-visible { outline: 2px solid var(--violet); outline-offset: 2px; }
+.app { max-width: 1320px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 28px; display: grid; gap: 12px; }
+.head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 16px; }
+.brand { display: flex; align-items: center; gap: 12px; font-size: clamp(1.35rem, 4vw, 1.9rem); font-weight: 700; letter-spacing: -0.015em; }
+.brand i { width: 38px; height: 38px; border-radius: 8px; background: var(--violet); display: grid; place-items: center; font-style: normal; font-size: 20px; color: #0b090d; flex: none; }
+.brand span { color: var(--gold); font-weight: 600; }
+.brand small { display: block; font: 600 12px var(--mono); letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase; margin-top: 2px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; font: 600 13px var(--mono); letter-spacing: 0.04em; padding: 8px 12px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border-hi); }
+.btn:hover { background: var(--surface-3); }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.pipe { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.pipe span { font: 600 12px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; text-align: center; padding: 8px 0; border-radius: 8px; background: var(--surface-1); border: 1px solid var(--border); color: var(--text-muted); transition: all 0.3s; }
+.pipe span.done { color: var(--text-secondary); }
+.pipe span.on { color: var(--text-primary); border-color: var(--violet); box-shadow: inset 0 -2px 0 var(--violet); }
+.pipe span.gate.on { border-color: var(--gold); box-shadow: inset 0 -2px 0 var(--gold); }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 12px; }
+.stage { position: relative; height: 680px; border-radius: 14px; border: 1px solid var(--border); overflow: hidden; background: radial-gradient(ellipse at 50% 50%, #170f22 0%, var(--plane) 70%); touch-action: none; }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
+.stage canvas.drag { cursor: grabbing; }
+.hint { position: absolute; left: 14px; bottom: 12px; font: 12px var(--mono); color: var(--text-muted); pointer-events: none; }
+.legend { position: absolute; right: 12px; bottom: 10px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 12px; font-size: 13px; color: var(--text-secondary); max-width: 70%; pointer-events: none; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; }
+
+.side { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.panel { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; min-width: 0; }
+.label { font-size: 13px; font-weight: 560; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); }
+.job h2 { margin: 4px 0 2px; font-size: 1.25rem; line-height: 1.25; }
+.job code { font: 13px var(--mono); color: var(--gold); }
+.job p { margin: 8px 0 0; color: var(--text-secondary); font-size: 15px; }
+.hop { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(157, 107, 255, 0.1); border: 1px solid rgba(157, 107, 255, 0.35); }
+.hop b { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.hop span { display: block; font-size: 15px; color: var(--text-secondary); margin-top: 2px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font: 600 12px var(--mono); padding: 3px 8px; border-radius: 999px; background: var(--surface-3); white-space: nowrap; }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c, var(--text-muted)); }
+.jobs { display: grid; gap: 6px; margin-top: 10px; }
+.jobs button { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; }
+.jobs button[aria-current="true"] { border-color: var(--violet); background: rgba(157, 107, 255, 0.08); }
+.log { margin-top: 8px; font: 13px/1.5 var(--mono); max-height: 260px; overflow-y: auto; }
+.log div { display: grid; grid-template-columns: max-content 1fr; gap: 8px; padding: 4px 6px; border-radius: 6px; }
+.log div > span:first-child { color: var(--text-muted); }
+.log .new { background: rgba(157, 107, 255, 0.1); }
+.rules { margin: 8px 0 0; padding-left: 18px; font-size: 15px; color: var(--text-secondary); }
+.rules li { margin: 3px 0; }
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; font: 12px var(--mono); color: var(--text-muted); }
+.foot b { color: var(--text-primary); }
+
+/* full screen: the graph edge to edge, with the job and the hop as an overlay */
+.fs .stage { position: fixed; inset: 0; z-index: 30; height: auto; border-radius: 0; border: 0; }
+.fs .fs-hud { display: grid; }
+.fs-hud { display: none; position: fixed; z-index: 31; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); gap: 8px; pointer-events: none; }
+.fs-hud .panel { background: rgba(18, 18, 18, 0.88); pointer-events: auto; max-width: 560px; }
+.fs-exit { display: none; position: fixed; z-index: 32; top: calc(12px + env(safe-area-inset-top, 0px)); left: 12px; }
+.fs .fs-exit { display: inline-flex; }
+.fs .legend, .fs .hint { display: none; }
+
+/* tooltip + 3D card */
+[hidden] { display: none !important; }
+.tip { position: fixed; z-index: 50; pointer-events: none; background: var(--surface-2); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 8px; padding: 8px 10px; font-size: 14px; line-height: 1.4; box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6); max-width: 260px; }
+.tip span { color: var(--text-secondary); display: block; }
+.overlay { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; perspective: 1400px; background: rgba(4, 3, 6, 0.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.card { width: min(520px, 100%); max-height: min(86vh, 820px); overflow-y: auto; background: linear-gradient(180deg, #17131c, var(--surface-1) 42%); border: 1px solid var(--border-hi); border-radius: 16px; padding: 24px; box-shadow: 0 40px 90px rgba(0, 0, 0, 0.75); position: relative; transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transform-style: preserve-3d; }
+.card .x { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; font-size: 20px; color: var(--text-secondary); background: var(--surface-2); }
+.card .eyebrow { font-size: 13px; font-weight: 560; letter-spacing: 0.09em; text-transform: uppercase; color: var(--gold); }
+.card h3 { margin: 4px 44px 8px 0; font-size: 1.5rem; line-height: 1.2; transform: translateZ(40px); }
+.card p { color: var(--text-secondary); margin: 0 0 12px; }
+.card h4 { margin: 14px 0 6px; font-size: 13px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); }
+.card ul { margin: 0; padding-left: 20px; }
+.card li { margin: 4px 0; }
+.card .src { margin-top: 12px; font-size: 13px; color: var(--text-muted); }
+
+@media (max-width: 980px) {
+  .main { grid-template-columns: 1fr; }
+  .stage { height: min(118vw, 560px); }
+  .pipe { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) { .legend { display: none; } body { font-size: 16px; } }
+@media (prefers-reduced-motion: reduce) { .pipe span { transition: none; } }
+</style>
+
+<div class="app" id="app">
+  <header class="head">
+    <div class="brand"><i aria-hidden="true">⚔</i><div>IGRIS <span>Shadow Multiverse</span><small>Agent Factory · routing graph</small></div></div>
+    <div class="btns"><button class="btn" id="pauseBtn" type="button">Pause</button><button class="btn" id="fsBtn" type="button">⛶ Full screen</button></div>
+  </header>
+
+  <nav class="pipe" id="pipe" aria-label="Ship pipeline"></nav>
+
+  <section class="main">
+    <div class="stage" id="stage">
+      <canvas id="cv" aria-label="3D routing graph of the Agent Factory. Tap a node for details."></canvas>
+      <div class="hint">drag to turn · tap a node</div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <aside class="side">
+      <section class="panel job" id="job" aria-live="polite"></section>
+      <section class="panel"><div class="label">Replays · Oct 11</div><div class="jobs" id="jobs"></div></section>
+      <section class="panel"><div class="label">Run log</div><div class="log" id="log"></div></section>
+      <section class="panel"><div class="label">House rules</div><ul class="rules">
+        <li>Nothing mocked is shown as live</li><li>Every change has a Summary and a Test Plan</li><li>No pushes, deploys, deletes, spending or messages without Prat</li><li>Each agent names who goes next</li></ul></section>
+    </aside>
+  </section>
+  <footer class="foot"><span><b>prat</b> · CEO</span><span>Replays of real work, run by hand on Oct 11 · the factory itself isn't installed yet</span><span>IGRIS SHADOW MULTIVERSE · v1</span></footer>
+</div>
+
+<button class="btn fs-exit" id="fsExit" type="button">✕ Exit</button>
+<div class="fs-hud" id="fsHud"><section class="panel job" id="fsJob"></section></div>
+<div class="overlay" id="overlay" hidden><div class="card" id="card" role="dialog" aria-modal="true" aria-labelledby="cardTitle"></div></div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------------- the factory ---------------- */
+const DEPTS = [
+  { id: 'prod', short: 'Product+Eng', name: 'Product + Engineering', c: '#3987e5', agents: [
+    ['product-manager', 'One-page spec: problem, users, success metric, non-goals, scope cuts.'],
+    ['tech-lead', 'Design doc and a plan of small diffs, each with an owner and a test.'],
+    ['frontend-engineer', 'UI one diff at a time; accessible, 400px-ready, screenshotted.'],
+    ['backend-engineer', 'APIs, data and model integrations with honest failure paths.'],
+    ['code-reviewer', 'Nothing lands without review: Blocking, Should fix, Nit, verdict.'],
+    ['qa-engineer', 'End-to-end test plans, real runs, bugs with exact steps.']] },
+  { id: 'design', short: 'Design', name: 'Design + Research', c: '#d95926', agents: [
+    ['product-designer', 'Flows, every screen state, real copy, accessibility.'],
+    ['ux-researcher', 'Interview and test plans; findings from evidence, never invented.'],
+    ['market-researcher', 'Competitors, prior art, pricing and rules, every claim sourced.']] },
+  { id: 'growth', short: 'Growth', name: 'Growth + Launch', c: '#199e70', agents: [
+    ['launch-manager', 'Runs the launch review: Go, Go with conditions, or No go.'],
+    ['content-strategist', 'README, Devpost, demo video scripts, TikTok and LinkedIn posts.'],
+    ['data-scientist', 'Metrics, A/B tests and analysis computed in code.']] },
+  { id: 'ops', short: 'Ops', name: 'Ops + Integrity', c: '#c98500', agents: [
+    ['privacy-security-reviewer', 'Mandatory review of data, secrets, auth and third parties. Can block.'],
+    ['release-engineer', 'Builds, deploy configs, monitoring, SEVs and postmortems.'],
+    ['cost-controller', 'Credits, caps and budgets; never spends, only recommends.']] },
+];
+const COUNCIL = [
+  ['chakra', 'Chakra', 'The Strategist. Picks ideas; hackathon schedule co-lead since Oct 2.'],
+  ['codex', 'Codex', 'The builder on your PC. Owns ELEVATE since Sep 6, builds Nightly, built ECHO’s voice base.'],
+  ['gemini', 'Gemini', 'Works through Antigravity: Seatback Arcade, Casley Aura, The Other Side with Codex.'],
+  ['echo', 'ECHO', 'The AI character inside The Other Side.'],
+];
+
+/* nodes in 3D: CEO above, Igris (engineering manager) at the core, departments on a ring, agents orbiting their hub, council on the outer ring */
+const N = [], byId = {};
+const add = n => { N.push(n); byId[n.id] = n; return n; };
+add({ id: 'prat', label: 'PRAT · CEO', kind: 'ceo', c: '#e3b45e', p: [0, -0.95, 0], r: 11, desc: 'Approves every push, deploy and dollar. Agents never do those without you.' });
+add({ id: 'igris', label: 'IGRIS · EM', kind: 'em', c: '#9d6bff', p: [0, 0, 0], r: 14, desc: 'Your Claude Code session as engineering manager: runs the pipeline, routes each hop, reports to you.' });
+DEPTS.forEach((d, i) => {
+  const a = i / DEPTS.length * Math.PI * 2 + Math.PI / 4, hub = [Math.cos(a) * 1.35, 0.1, Math.sin(a) * 1.35];
+  add({ id: 'h-' + d.id, label: d.name, short: d.short, kind: 'hub', c: d.c, p: hub, r: 9, dept: d });
+  d.agents.forEach(([name, role], j) => {
+    const b = j / d.agents.length * Math.PI * 2, rr = 0.45;
+    add({ id: name, label: name, kind: 'agent', c: d.c, p: [hub[0] + Math.cos(b) * rr, hub[1] + Math.sin(b) * rr * 0.8, hub[2] + Math.sin(b + 1) * rr * 0.6], r: 6, role, dept: d });
+  });
+});
+COUNCIL.forEach(([id, label, desc], i) => {
+  const a = i / COUNCIL.length * Math.PI * 2 + 0.4, p = [Math.cos(a) * 2.05, -0.35 + (i % 2) * 0.7, Math.sin(a) * 2.05];
+  add({ id, label, kind: 'council', c: '#9085e9', p, r: 7, desc });
+});
+const E = [['prat', 'igris']];
+DEPTS.forEach(d => { E.push(['igris', 'h-' + d.id]); d.agents.forEach(([a]) => E.push(['h-' + d.id, a])); });
+COUNCIL.forEach(([id]) => E.push(['igris', id]));
+
+/* each department is its own small universe: a shell of faint particles around its hub */
+const SHELL = [];
+DEPTS.forEach(d => { const h = byId['h-' + d.id].p; for (let i = 0; i < 70; i++) { const u = Math.random() * 2 - 1, t = Math.random() * 6.283, s = Math.sqrt(1 - u * u), R = 0.5; SHELL.push({ p: [h[0] + s * Math.cos(t) * R, h[1] + u * R * 0.8, h[2] + s * Math.sin(t) * R], c: d.c, ph: Math.random() * 6.28 }); } });
+const STARS = Array.from({ length: 200 }, () => ({ x: Math.random(), y: Math.random(), a: 0.15 + Math.random() * 0.45, r: Math.random() < 0.1 ? 1.4 : 0.7, ph: Math.random() * 6.28 }));
+
+/* ---------------- replays: real work from Oct 11, routed hop by hop ---------------- */
+const STAGES = ['Spec', 'Design', 'Build', 'Review', 'QA', 'Gate', 'Ready'];
+const JOBS = [
+  { name: 'Launch review · The Other Side', cmd: '/agent-factory:launch-review', why: 'QA, privacy and cost reviewed ECHO in parallel before the hackathon.', result: ['Go with conditions', 'var(--warning)'], hops: [
+    ['igris', 'Gate', 'Routes the review: QA, privacy and cost in parallel'],
+    ['qa-engineer', 'QA', '112/112 backend, 51/51 web tests, lint and build clean'],
+    ['privacy-security-reviewer', 'Gate', 'No blockers. 6 should-fixes: voice cap, Renée key, face-scan disclosure…'],
+    ['cost-controller', 'Gate', 'Spend is tiny; an always-on GPU for Renée is the one big risk'],
+    ['launch-manager', 'Gate', 'Go with conditions: deploy, video, credits, honest claims'],
+    ['prat', 'Ready', 'You decide what ships'] ] },
+  { name: 'Ship · hosted-demo hardening', cmd: '/agent-factory:ship', why: 'The six should-fixes from the review, shipped as small diffs.', result: ['Shipped · 299becd', 'var(--good)'], hops: [
+    ['product-manager', 'Spec', 'Spec: the 6 should-fixes, scope cut to what judges hit'],
+    ['tech-lead', 'Design', 'Plan: 6 small diffs, each with a test'],
+    ['backend-engineer', 'Build', 'Voice cap, per-IP rate limit, no retry on 4xx, Renée key required'],
+    ['frontend-engineer', 'Build', 'Face scan names Nebius Token Factory'],
+    ['code-reviewer', 'Review', 'Verdict: approve. One test tightened'],
+    ['qa-engineer', 'QA', '119 passed, ruff clean, 51 web tests, build OK'],
+    ['privacy-security-reviewer', 'Gate', 'README privacy section rewritten for the hosted build'],
+    ['content-strategist', 'Ready', 'Docs and test counts updated'],
+    ['release-engineer', 'Ready', 'Fast-forwarded to main'],
+    ['prat', 'Ready', 'Approved the merge'] ] },
+  { name: 'Ship · cap lockout fix', cmd: '/agent-factory:ship', why: 'Judges were locked out once the daily AI budget ran out.', result: ['Shipped · 083b8ea', 'var(--good)'], hops: [
+    ['product-manager', 'Spec', 'Over budget, the session must still open with built-in commands'],
+    ['backend-engineer', 'Build', 'Limited session on 429; refused key or credit gets its own message'],
+    ['frontend-engineer', 'Build', 'Status line says “budget used”, never “live”'],
+    ['code-reviewer', 'Review', 'Approve'],
+    ['qa-engineer', 'QA', '123 passed, 51 web tests, build OK'],
+    ['release-engineer', 'Ready', 'Merged to main'],
+    ['prat', 'Ready', 'Approved'] ] },
+];
+
+/* ---------------- canvas + camera ---------------- */
+const stage = $('stage'), cv = $('cv'), g = cv.getContext('2d');
+let W = 800, H = 600, PR = 1, yaw = 0.6, pitch = 0.5, auto = true, dragging = null;
+function size() { W = stage.clientWidth; H = stage.clientHeight; PR = Math.min(2, devicePixelRatio || 1); cv.width = Math.round(W * PR); cv.height = Math.round(H * PR); }
+size(); new ResizeObserver(size).observe(stage);
+function proj(p) {
+  const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+  const x1 = p[0] * cy - p[2] * sy, z1 = p[0] * sy + p[2] * cy, y2 = p[1] * cp - z1 * sp, z2 = p[1] * sp + z1 * cp;
+  const f = Math.min(W, H) * (W < 560 ? 0.21 : 0.25), d = 4.2, s = d / (d + z2);
+  return [W / 2 + x1 * f * s, H * 0.52 + y2 * f * s, z2, s];
+}
+cv.addEventListener('pointerdown', e => { dragging = { x: e.clientX, y: e.clientY, yaw, pitch, moved: false }; cv.setPointerCapture(e.pointerId); cv.classList.add('drag'); });
+cv.addEventListener('pointermove', e => {
+  if (dragging) { const dx = e.clientX - dragging.x, dy = e.clientY - dragging.y; if (Math.abs(dx) + Math.abs(dy) > 4) dragging.moved = true; yaw = dragging.yaw + dx * 0.006; pitch = Math.max(-0.2, Math.min(1.1, dragging.pitch + dy * 0.004)); auto = false; return; }
+  const n = hit(e); const tip = $('tip');
+  if (!n) { tip.hidden = true; cv.style.cursor = ''; return; }
+  cv.style.cursor = 'pointer';
+  tip.innerHTML = `<b>${esc(n.label)}</b><span>${esc(n.role || n.desc || (n.dept ? n.dept.name : ''))}</span>`; tip.hidden = false;
+  tip.style.left = Math.min(innerWidth - tip.offsetWidth - 8, e.clientX + 14) + 'px'; tip.style.top = Math.min(innerHeight - tip.offsetHeight - 8, e.clientY + 14) + 'px';
+});
+cv.addEventListener('pointerup', e => { cv.classList.remove('drag'); const d = dragging; dragging = null; if (d && !d.moved) { const n = hit(e); if (n) openCard(n); } setTimeout(() => { auto = true; }, 4000); });
+cv.addEventListener('pointerleave', () => { $('tip').hidden = true; });
+let last2d = [];
+function hit(e) {
+  const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  let best = null, bd = 1e9;
+  for (const [n, px, py, rad] of last2d) { const d = Math.hypot(px - x, py - y); if (d < Math.max(14, rad + 6) && d < bd) { bd = d; best = n; } }
+  return best;
+}
+
+/* ---------------- routing state ---------------- */
+let jobIdx = 0, hopIdx = 0, hopT = 0, paused = false, packetT = 0;
+const HOP = 2.6;
+const visitCount = {};
+function curJob() { return JOBS[jobIdx]; }
+function hopFrom() { const j = curJob(); return hopIdx === 0 ? 'igris' : j.hops[hopIdx - 1][0]; }
+function startJob(i) { jobIdx = (i + JOBS.length) % JOBS.length; hopIdx = 0; hopT = 0; renderJobs(); renderJob(); logLine(`▶ ${curJob().cmd}`, curJob().name); }
+function advance() {
+  const j = curJob();
+  logLine(`[${j.hops[hopIdx][1].toLowerCase()}]`, `${j.hops[hopIdx][0]} · ${j.hops[hopIdx][2]}`);
+  visitCount[j.hops[hopIdx][0]] = (visitCount[j.hops[hopIdx][0]] || 0) + 1;
+  hopIdx++; hopT = 0;
+  if (hopIdx >= j.hops.length) { logLine('■ result', j.result[0]); setTimeout(() => startJob(jobIdx + 1), 1800); hopIdx = j.hops.length - 1; hopT = -999; }
+  renderJob();
+}
+
+/* ---------------- panels ---------------- */
+$('pipe').innerHTML = STAGES.map((s, i) => `<span id="ps${i}" class="${s === 'Gate' ? 'gate' : ''}">${s}</span>`).join('');
+$('legend').innerHTML = DEPTS.map(d => `<span><i style="background:${d.c}"></i>${d.name}</span>`).join('') + '<span><i style="background:#9085e9"></i>Council</span><span><i style="background:#e3b45e"></i>CEO</span>';
+function renderJobs() { $('jobs').innerHTML = JOBS.map((j, i) => `<button type="button" data-j="${i}" aria-current="${i === jobIdx}"><span>${esc(j.name)}</span><span class="chip" style="--c:${j.result[1]}">${esc(j.result[0])}</span></button>`).join(''); }
+$('jobs').addEventListener('click', e => { const b = e.target.closest('[data-j]'); if (b) startJob(+b.dataset.j); });
+function jobHTML() {
+  const j = curJob(), h = j.hops[Math.min(hopIdx, j.hops.length - 1)], n = byId[h[0]];
+  return `<div class="label">Now routing · hop ${Math.min(hopIdx + 1, j.hops.length)} of ${j.hops.length}</div><h2>${esc(j.name)}</h2><code>${esc(j.cmd)}</code>
+    <div class="hop"><b><span class="dot" style="background:${n.c}"></span>${esc(n.label)} <span class="chip" style="--c:${h[1] === 'Gate' ? 'var(--gold)' : 'var(--violet)'};margin-left:auto">${h[1]}</span></b><span>${esc(h[2])}</span></div>
+    <p>${esc(j.why)} Result: <b>${esc(j.result[0])}</b>.</p>`;
+}
+function renderJob() {
+  $('job').innerHTML = jobHTML(); $('fsJob').innerHTML = jobHTML();
+  const j = curJob(), st = STAGES.indexOf(j.hops[Math.min(hopIdx, j.hops.length - 1)][1]);
+  STAGES.forEach((_, i) => { const el = $('ps' + i); el.classList.toggle('on', i === st); el.classList.toggle('done', i < st); });
+}
+const LOG = [];
+function logLine(a, b) {
+  LOG.push([a, b]); if (LOG.length > 40) LOG.shift();
+  $('log').innerHTML = LOG.map(([x, y], i) => `<div class="${i === LOG.length - 1 ? 'new' : ''}"><span>${esc(x)}</span><span>${esc(y)}</span></div>`).join('');
+  $('log').scrollTop = $('log').scrollHeight;
+}
+
+/* ---------------- detail card ---------------- */
+const overlay = $('overlay'), card = $('card');
+function openCard(n) {
+  const work = []; JOBS.forEach(j => j.hops.forEach(h => { if (h[0] === n.id) work.push(`${j.name}: ${h[2]}`); }));
+  let eb = n.kind === 'agent' ? n.dept.name : n.kind === 'hub' ? 'Department' : n.kind === 'council' ? 'The Council' : n.kind === 'ceo' ? 'CEO' : 'Engineering manager';
+  let body = n.role || n.desc || '';
+  let list = '';
+  if (n.kind === 'hub') list = `<h4>Agents</h4><ul>${n.dept.agents.map(([a, r]) => `<li><b>${a}</b>: ${esc(r)}</li>`).join('')}</ul>`;
+  if (work.length) list += `<h4>In the Oct 11 replays</h4><ul>${work.map(w => `<li>${esc(w)}</li>`).join('')}</ul>`;
+  card.innerHTML = `<button class="x" aria-label="Close">×</button><div class="eyebrow">${esc(eb)}</div><h3 id="cardTitle">${esc(n.label)}</h3><p>${esc(body)}</p>${list}<div class="src">From your Agent Factory page and today's session.</div>`;
+  overlay.hidden = false; card.querySelector('.x').addEventListener('click', closeCard); card.querySelector('.x').focus({ preventScroll: true });
+  if (!reduce) card.animate([{ transform: 'scale(.6) rotateY(-30deg) rotateX(10deg)', opacity: 0 }, { transform: 'scale(1.03)', opacity: 1, offset: 0.75 }, { transform: 'scale(1)', opacity: 1 }], { duration: 480, easing: 'cubic-bezier(.2,.8,.2,1)' });
+}
+function closeCard() { overlay.hidden = true; }
+overlay.addEventListener('click', e => { if (e.target === overlay) closeCard(); });
+addEventListener('keydown', e => { if (e.key === 'Escape') { if (!overlay.hidden) closeCard(); else setFs(false); } });
+card.addEventListener('pointermove', e => { const r = card.getBoundingClientRect(); card.style.setProperty('--rx', ((0.5 - (e.clientY - r.top) / r.height) * 6).toFixed(2) + 'deg'); card.style.setProperty('--ry', (((e.clientX - r.left) / r.width - 0.5) * 8).toFixed(2) + 'deg'); });
+
+/* ---------------- controls ---------------- */
+$('pauseBtn').addEventListener('click', () => { paused = !paused; $('pauseBtn').textContent = paused ? 'Play' : 'Pause'; });
+function setFs(on) { document.body.classList.toggle('fs', on); if (on && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {}); }
+$('fsBtn').addEventListener('click', () => setFs(true)); $('fsExit').addEventListener('click', () => setFs(false));
+
+/* ---------------- draw ---------------- */
+function glow(x, y, r, col, a) { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, col + Math.round(a * 255).toString(16).padStart(2, '0')); gr.addColorStop(1, col + '00'); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); }
+let lastNow = null, T = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = lastNow === null ? 0 : Math.min(0.1, (now - lastNow) / 1000); lastNow = now; T += dt;
+  if (auto && !reduce) yaw += dt * 0.08;
+  if (!paused) { hopT += dt; if (hopT > HOP) advance(); }
+  g.setTransform(PR, 0, 0, PR, 0, 0); g.clearRect(0, 0, W, H);
+  for (const s of STARS) { g.fillStyle = `rgba(255,255,255,${s.a * (reduce ? 1 : 0.6 + 0.4 * Math.sin(T * 1.3 + s.ph))})`; g.beginPath(); g.arc(s.x * W, s.y * H, s.r, 0, 6.283); g.fill(); }
+  const P = {}; for (const n of N) P[n.id] = proj(n.p);
+  // universes
+  g.globalCompositeOperation = 'lighter';
+  for (const s of SHELL) { const q = proj(s.p); g.fillStyle = s.c + Math.round((0.18 + 0.12 * Math.sin(T * 2 + s.ph)) * 255).toString(16).padStart(2, '0'); g.fillRect(q[0], q[1], 1.6 * q[3], 1.6 * q[3]); }
+  DEPTS.forEach(d => { const q = P['h-' + d.id]; glow(q[0], q[1], Math.min(W, H) * 0.16 * q[3], d.c, 0.13); });
+  glow(P.igris[0], P.igris[1], Math.min(W, H) * 0.2, '#9d6bff', 0.35);
+  // edges
+  const j = curJob(), from = hopFrom(), to = j.hops[Math.min(hopIdx, j.hops.length - 1)][0];
+  for (const [a, b] of E) { const p = P[a], q = P[b], depth = (p[2] + q[2]) / 2; g.strokeStyle = `rgba(255,255,255,${0.1 + 0.1 * (1 - depth / 2)})`; g.lineWidth = 1; g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); g.stroke(); }
+  // the active route: from the previous hop to the current one, with a packet riding it
+  if (hopT >= 0) {
+    const p = P[from], q = P[to], k = Math.min(1, hopT / (HOP * 0.55)), e = k * k * (3 - 2 * k);
+    g.strokeStyle = 'rgba(227,180,94,0.75)'; g.lineWidth = 2.2; g.setLineDash([6, 6]); g.lineDashOffset = -T * 30; g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); g.stroke(); g.setLineDash([]);
+    const x = p[0] + (q[0] - p[0]) * e, y = p[1] + (q[1] - p[1]) * e;
+    glow(x, y, 18, '#ffe9c8', 0.95); glow(x, y, 6, '#ffffff', 1);
+    for (let i = 1; i < 6; i++) { const ee = Math.max(0, e - i * 0.04); glow(p[0] + (q[0] - p[0]) * ee, p[1] + (q[1] - p[1]) * ee, 9 - i, '#e3b45e', 0.5 - i * 0.08); }
+  }
+  g.globalCompositeOperation = 'source-over';
+  // nodes, back to front
+  last2d = [];
+  const order = N.map(n => [n, P[n.id]]).sort((a, b) => b[1][2] - a[1][2]);
+  for (const [n, q] of order) {
+    const active = n.id === to && hopT >= HOP * 0.5, rad = n.r * q[3] * (active ? 1.5 + 0.2 * Math.sin(T * 8) : 1);
+    if (active || n.kind === 'em' || n.kind === 'ceo') { g.globalCompositeOperation = 'lighter'; glow(q[0], q[1], rad * 4, n.c, active ? 0.9 : 0.5); g.globalCompositeOperation = 'source-over'; }
+    g.fillStyle = n.c; g.beginPath(); g.arc(q[0], q[1], rad, 0, 6.283); g.fill();
+    if (visitCount[n.id] && n.kind === 'agent') { g.strokeStyle = 'rgba(255,255,255,0.85)'; g.lineWidth = 1.5; g.beginPath(); g.arc(q[0], q[1], rad + 3, 0, 6.283); g.stroke(); }
+    last2d.push([n, q[0], q[1], rad]);
+    const showLabel = (n.kind !== 'agent' && !(W < 560 && n.kind === 'council')) || active || W > 900;
+    if (showLabel) {
+      const fs = n.kind === 'agent' ? 11 : 13; g.font = `${n.kind === 'agent' ? 500 : 650} ${fs}px ${getComputedStyle(document.body).fontFamily}`;
+      const text = W < 560 && n.short ? n.short : n.label, tw = g.measureText(text).width, lx = q[0], ly = q[1] - rad - 9;
+      g.globalAlpha = Math.max(0.35, Math.min(1, 1.2 - q[2] * 0.35));
+      g.fillStyle = 'rgba(8,8,8,0.78)'; g.fillRect(lx - tw / 2 - 5, ly - fs, tw + 10, fs + 6);
+      g.fillStyle = '#fff'; g.textAlign = 'center'; g.fillText(text, lx, ly);
+      g.globalAlpha = 1;
+    }
+  }
+}
+renderJobs(); startJob(0);
+requestAnimationFrame(frame);
+})();
+</script>
