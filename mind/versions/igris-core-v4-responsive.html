@@ -1,0 +1,747 @@
+<title>Igris Shadow Core</title>
+<style>
+/* Layout: control room. Desktop = instruments | fiber core | instruments, editor + log below.
+   Phone = one column, core first. Every instrument is a button that opens a 3D detail card.
+   Shell = Monarch (violet/gold chrome). Charts = Matte validated palette, status colors reserved. */
+:root {
+  /* surfaces (Matte) */
+  --plane: #080808; --surface-1: #121212; --surface-2: #1a1a1a; --surface-3: #222222;
+  --border: rgba(255, 255, 255, 0.10); --border-hi: rgba(255, 255, 255, 0.22);
+  /* ink */
+  --text-primary: #ffffff; --text-secondary: #c9c9c4; --text-muted: #8a8a84;
+  --grid: #232323; --axis: #383835;
+  /* categorical, fixed slot order */
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+  --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+  /* sequential */
+  --seq-100: #cde2fb; --seq-200: #9ec5f4; --seq-300: #6da7ec; --seq-400: #3987e5; --seq-500: #256abf; --seq-600: #184f95;
+  /* status, reserved */
+  --good: #0ca30c; --warning: #fab219; --serious: #ec835a; --critical: #d03b3b;
+  /* Monarch chrome, brand only, never chart data */
+  --violet: #9d6bff; --gold: #e3b45e;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--plane); }
+body { margin: 0; color: var(--text-primary); font: 17px/1.65 var(--sans); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--violet); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+.label { font-size: 13px; font-weight: 560; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); }
+
+.app { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 32px; display: grid; gap: 12px; }
+
+/* header */
+.head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.brand { display: flex; align-items: center; gap: 12px; font-size: clamp(1.4rem, 4vw, 1.9rem); font-weight: 700; letter-spacing: -0.015em; }
+.brand i { width: 38px; height: 38px; border-radius: 8px; background: var(--violet); display: grid; place-items: center; font-style: normal; font-size: 20px; color: #0b090d; flex: none; }
+.brand span { color: var(--gold); font-weight: 600; }
+.clock { display: flex; gap: 16px; align-items: center; font: 600 13px var(--mono); }
+.live { color: var(--text-primary); display: inline-flex; align-items: center; gap: 7px; letter-spacing: 0.1em; }
+.live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--critical); animation: pulse 1.4s infinite; }
+.clock small { display: block; color: var(--text-muted); font-weight: 400; }
+@keyframes pulse { 50% { opacity: 0.3; } }
+
+/* tappable cards */
+.panel { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; position: relative; min-width: 0; }
+.tap { transition: border-color 0.2s, transform 0.25s, box-shadow 0.25s; transform-style: preserve-3d; will-change: transform; }
+.tap:hover { border-color: var(--border-hi); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55); }
+.tap .more { position: absolute; top: 12px; right: 14px; font: 600 12px var(--mono); color: var(--text-muted); }
+.tap:hover .more { color: var(--text-primary); }
+.ttl { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-right: 22px; }
+.ttl h2 { margin: 0; font-size: 14px; font-weight: 650; letter-spacing: 0.06em; text-transform: uppercase; }
+.ttl small { font-size: 13px; color: var(--text-muted); }
+
+/* pipeline */
+.stages { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.stage { padding: 10px 12px; border-radius: 10px; }
+.stage b { display: block; font-size: 15px; }
+.stage span { font-size: 13px; color: var(--text-muted); }
+.stage em { font-style: normal; font: 600 12px var(--mono); color: var(--text-muted); }
+.stage .bar { height: 3px; background: var(--surface-3); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.stage .bar i { display: block; height: 100%; width: 0; background: var(--violet); }
+.stage.on { border-color: var(--violet); }
+.stage.gate { border-color: rgba(227, 180, 94, 0.45); }
+.stage.gate.on { border-color: var(--gold); }
+.stage.gate .bar i { background: var(--gold); }
+
+/* main grid */
+.main { display: grid; grid-template-columns: 300px minmax(0, 1fr) 280px; gap: 12px; align-items: stretch; }
+.col { align-content: start; }
+.col { display: grid; gap: 12px; }
+
+/* projects */
+.plist { display: grid; gap: 10px; margin-top: 12px; }
+.prow { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px 8px; margin-inline: -8px; border-radius: 8px; }
+.prow:hover { background: var(--surface-2); }
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+.prow b { font-size: 15px; font-weight: 600; display: block; line-height: 1.25; }
+.prow small { font-size: 13px; color: var(--text-muted); }
+.chip { display: inline-flex; align-items: center; gap: 6px; font: 600 12px var(--mono); padding: 3px 8px; border-radius: 999px; background: var(--surface-3); color: var(--text-primary); white-space: nowrap; }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c, var(--text-muted)); }
+
+/* svgs */
+svg text { fill: var(--text-secondary); font-family: var(--sans); }
+.chart { width: 100%; display: block; margin-top: 10px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--text-secondary); margin-top: 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; }
+.bigline { display: flex; align-items: baseline; gap: 10px; margin-top: 6px; }
+.big { font-size: 34px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; }
+
+/* core */
+.core { display: flex; flex-direction: column; padding: 0; overflow: hidden; background: radial-gradient(ellipse at 50% 55%, #1b1324 0%, var(--plane) 72%); border-color: var(--border); }
+.stagewrap { position: relative; flex: 1; min-height: 620px; }
+.stagewrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+svg.leads { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.corelabel { position: absolute; left: 50%; top: 56%; transform: translate(-50%, -50%); font: 600 11px var(--mono); letter-spacing: 0.22em; color: rgba(255, 255, 255, 0.4); pointer-events: none; }
+.tag { position: absolute; transform: translate(-50%, -50%); background: rgba(8, 8, 8, 0.88); border: 1px solid var(--border-hi); font: 600 12px var(--mono); padding: 4px 9px; border-radius: 6px; white-space: nowrap; transition: opacity 0.2s, background 0.2s; }
+.tag:hover { background: var(--surface-3); }
+.tag::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--c, #fff); margin-right: 7px; vertical-align: 1px; }
+.boxes { position: absolute; inset: 0; pointer-events: none; }
+.box { position: absolute; pointer-events: auto; width: 200px; background: rgba(8, 8, 8, 0.9); border: 1px solid var(--border-hi); border-radius: 10px; padding: 10px 12px; }
+.box b { display: block; font-size: 14px; letter-spacing: 0.04em; text-transform: uppercase; }
+.box span { font-size: 13px; color: var(--text-secondary); }
+.box .more { top: 9px; right: 11px; }
+.box.a { left: 18px; top: 18px; } .box.b { right: 18px; top: 18px; } .box.c { right: 18px; bottom: 18px; }
+
+/* factory */
+.stack { display: flex; height: 14px; border-radius: 4px; overflow: hidden; gap: 2px; margin-top: 12px; }
+.stack i { display: block; height: 100%; }
+.drows { display: grid; gap: 6px; margin-top: 10px; font-size: 14px; }
+.drows div { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; }
+.drows i { width: 10px; height: 10px; border-radius: 2px; }
+.drows span { color: var(--text-secondary); }
+
+/* gauge */
+.gate-g { display: grid; justify-items: center; margin-top: 4px; }
+.gstats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; text-align: center; font-size: 18px; font-weight: 600; }
+.gstats div::before { content: attr(data-k); display: block; font-size: 12px; font-weight: 560; color: var(--text-muted); letter-spacing: 0.08em; }
+
+/* build grid */
+.hm { display: grid; grid-template-columns: 26px repeat(7, 1fr); gap: 3px; margin-top: 12px; font: 600 11px var(--mono); color: var(--text-muted); }
+.hm i { aspect-ratio: 1; border-radius: 3px; display: block; }
+.hm span { display: grid; place-items: center; }
+
+/* kpis */
+.kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+.kpi { padding: 12px 14px; }
+.kpi .v { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; display: block; line-height: 1.25; }
+.kpi small { font-size: 13px; color: var(--text-muted); }
+
+/* editor + log */
+.lower { display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 12px; }
+.tabs { display: flex; gap: 16px; font: 13px var(--mono); color: var(--text-muted); align-items: center; flex-wrap: wrap; }
+.tabs b { color: var(--text-primary); background: var(--surface-2); padding: 4px 10px; border-radius: 6px; font-weight: 600; box-shadow: inset 0 -2px 0 var(--violet); }
+.tabs .lv { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); }
+.tabs .lv::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--critical); }
+.codebox { overflow-x: auto; margin-top: 12px; min-height: 300px; }
+pre.code { margin: 0; font: 13.5px/1.7 var(--mono); white-space: pre; color: var(--text-primary); }
+pre.code .ln { display: inline-block; width: 30px; color: var(--text-muted); user-select: none; }
+pre.code .cl { display: block; background: rgba(157, 107, 255, 0.12); box-shadow: inset 3px 0 0 var(--violet); }
+pre.code .c { color: var(--text-muted); }
+pre.code .s { color: var(--gold); }
+pre.code .k { color: var(--text-primary); font-weight: 700; }
+pre.code .caret { display: inline-block; width: 8px; height: 15px; background: #fff; vertical-align: -2px; animation: pulse 1s steps(1) infinite; }
+.log { margin-top: 10px; font: 13px/1.5 var(--mono); }
+.log div { display: grid; grid-template-columns: 58px 92px 1fr auto; gap: 8px; padding: 4px 6px; border-radius: 6px; align-items: center; }
+.log div > span:first-child { color: var(--text-muted); }
+.log .who { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); }
+.log .who::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
+.log .msg { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.log .r { color: var(--text-secondary); }
+.log .new { background: rgba(157, 107, 255, 0.1); }
+
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; font: 12px var(--mono); color: var(--text-muted); padding-top: 4px; }
+.foot b { color: var(--text-primary); }
+.progress { height: 2px; background: var(--surface-3); border-radius: 2px; overflow: hidden; }
+.progress i { display: block; height: 100%; width: 0; background: var(--violet); }
+
+[hidden] { display: none !important; }
+/* tooltip */
+.tip { position: fixed; z-index: 30; pointer-events: none; background: var(--surface-2); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 8px; padding: 8px 10px; font-size: 14px; line-height: 1.4; box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6); max-width: 240px; }
+.tip b { display: block; }
+.tip span { color: var(--text-secondary); }
+
+/* 3D detail card */
+.overlay { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 16px; perspective: 1400px; background: rgba(4, 3, 6, 0.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.card { width: min(560px, 100%); max-height: min(86vh, 860px); overflow-y: auto; background: linear-gradient(180deg, #17131c, var(--surface-1) 42%); border: 1px solid var(--border-hi); border-radius: 16px; padding: 24px 24px 22px; box-shadow: 0 40px 90px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(157, 107, 255, 0.18); transform-style: preserve-3d; transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); position: relative; }
+.card .x { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; font-size: 20px; color: var(--text-secondary); background: var(--surface-2); }
+.card .x:hover { color: #fff; }
+.card .eyebrow { font-size: 13px; font-weight: 560; letter-spacing: 0.09em; text-transform: uppercase; color: var(--gold); transform: translateZ(30px); }
+.card h3 { margin: 4px 44px 10px 0; font-size: 1.6rem; line-height: 1.2; font-weight: 640; letter-spacing: -0.015em; transform: translateZ(50px); text-wrap: balance; }
+.card .lede { color: var(--text-secondary); margin: 0 0 16px; transform: translateZ(24px); }
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; transform: translateZ(40px); }
+.metric { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+.metric b { display: block; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+.metric span { font-size: 13px; color: var(--text-muted); }
+.card .viz { transform: translateZ(28px); margin-bottom: 14px; }
+.card h4 { margin: 16px 0 6px; font-size: 13px; font-weight: 560; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); }
+.card ul { margin: 0; padding-left: 20px; }
+.card li { margin: 4px 0; }
+.card .next { margin-top: 16px; padding: 12px 14px; border-radius: 10px; background: rgba(157, 107, 255, 0.1); border: 1px solid rgba(157, 107, 255, 0.35); transform: translateZ(36px); }
+.card .next b { display: block; font-size: 13px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; }
+.card .src { margin-top: 14px; font-size: 13px; color: var(--text-muted); }
+
+/* responsive */
+@media (max-width: 1080px) {
+  .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .core { grid-column: 1 / -1; order: -1; }
+  .lower { grid-template-columns: 1fr; }
+  .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  body { font-size: 16px; }
+  .stages { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .main { grid-template-columns: 1fr; }
+  .stagewrap { flex: none; min-height: 0; height: min(100vw, 460px); }
+  .boxes { position: static; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 10px; pointer-events: auto; border-top: 1px solid var(--border); }
+  .box { position: relative; width: auto; left: auto !important; right: auto !important; top: auto !important; bottom: auto !important; padding: 8px 10px; }
+  .box b { font-size: 12px; padding-right: 14px; }
+  .box span { font-size: 12px; }
+  svg.leads { display: none; }
+  .tag { font-size: 11px; padding: 3px 7px; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .log div { grid-template-columns: 50px 80px 1fr auto; font-size: 12px; }
+  .card { padding: 20px 18px; }
+  .card h3 { font-size: 1.35rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live::before, pre.code .caret { animation: none; }
+  .tap { transition: none; }
+}
+</style>
+
+<div class="app" id="app">
+  <header class="head">
+    <div class="brand"><i aria-hidden="true">⚔</i>IGRIS <span>Shadow Core</span></div>
+    <div class="clock"><span class="live">LIVE</span><div class="num"><span id="date">—</span><small id="time">—</small></div></div>
+  </header>
+
+  <nav class="stages" id="stages" aria-label="Agent Factory ship pipeline"></nav>
+
+  <section class="main">
+    <div class="col" id="left">
+      <div class="panel tap" data-d="projects" role="button" tabindex="0"><span class="more">⤢</span>
+        <div class="ttl"><h2>Projects</h2><small>6 of 25</small></div>
+        <div class="plist" id="plist"></div>
+      </div>
+      <button class="panel tap" data-d="rank"><span class="more">⤢</span>
+        <div class="ttl"><h2>Rank</h2><small>Apr 3 log</small></div>
+        <div class="bigline"><span class="big">A</span><span class="label">2,395 / 2,800 XP</span></div>
+        <svg class="chart" id="rankChart" viewBox="0 0 220 64" role="img" aria-label="Rank ladder E to S, at A"></svg>
+      </button>
+      <button class="panel tap" data-d="quests"><span class="more">⤢</span>
+        <div class="ttl"><h2>Quest map</h2><small>26 daily</small></div>
+        <div class="bigline"><span class="big num" id="qxp">1,680</span><span class="label">XP / day</span></div>
+        <svg class="chart" id="questChart" viewBox="0 0 220 96" role="img" aria-label="Quest XP across the day by category"></svg>
+        <div class="legend" id="questLegend"></div>
+      </button>
+    </div>
+
+    <section class="core panel" aria-label="Igris core">
+      <div class="stagewrap" id="stagewrap">
+        <canvas id="torus" aria-hidden="true"></canvas>
+        <svg class="leads" id="leads"></svg>
+        <div class="corelabel">IGRIS CORE</div>
+        <div id="tags"></div>
+      </div>
+      <div class="boxes">
+        <button class="box tap a" data-d="laneA"><span class="more">⤢</span><b>Lane A · Director</b><span>Q4 case · AI &amp; BI</span></button>
+        <button class="box tap b" data-d="drafts"><span class="more">⤢</span><b>Drafts / Memory</b><span>how I remember you</span></button>
+        <button class="box tap c" data-d="gate"><span class="more">⤢</span><b>Ship / App</b><span>S-Rank 0 / 8</span></button>
+      </div>
+    </section>
+
+    <div class="col" id="right">
+      <div class="panel tap" data-d="factory" role="button" tabindex="0"><span class="more">⤢</span>
+        <div class="ttl"><h2>Agent Factory</h2><small>15 agents</small></div>
+        <div class="stack" id="stack"></div>
+        <div class="drows" id="drows"></div>
+      </div>
+      <button class="panel tap" data-d="gate"><span class="more">⤢</span>
+        <div class="ttl"><h2>S-Rank Gate</h2><small><span class="chip" style="--c:var(--critical)">LOCKED</span></small></div>
+        <div class="gate-g">
+          <svg width="170" height="110" viewBox="0 0 170 110" aria-hidden="true" id="gauge"></svg>
+        </div>
+        <div class="gstats"><div data-k="MET">0</div><div data-k="NEED">8</div><div data-k="OCT 30" id="tminus">—</div></div>
+      </button>
+      <button class="panel tap" data-d="rhythm"><span class="more">⤢</span>
+        <div class="ttl"><h2>Build rhythm</h2><small>planned min</small></div>
+        <div class="hm" id="hm"></div>
+      </button>
+    </div>
+  </section>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="lower">
+    <div class="panel"><div class="tabs" id="tabs"></div><div class="codebox"><pre class="code" id="code"></pre></div></div>
+    <div class="panel"><div class="tabs"><b>LIVE LOG</b><span>from your drafts</span><span class="lv">live</span></div><div class="log" id="log"></div></div>
+  </section>
+
+  <div class="progress"><i id="prog"></i></div>
+  <footer class="foot"><span><b>prat</b> · PRAT.EXE</span><span>Tap anything to open it</span><span>IGRIS SHADOW CORE · v4</span></footer>
+</div>
+
+<div class="overlay" id="overlay" hidden><div class="card" id="card" role="dialog" aria-modal="true" aria-labelledby="cardTitle"></div></div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const LOOP = 36;
+const DEADLINE = Date.UTC(2026, 9, 30, 17);
+const daysLeft = () => Math.max(0, Math.ceil((DEADLINE - Date.now()) / 864e5));
+
+/* ---------------- data ---------------- */
+const QUESTS = [["SYSTEM BOOT",50,"Discipline","06:00"],["BODY ACTIVATION",75,"Fitness","06:10"],["MANA CHARGE",25,"Nutrition","06:30"],["ARMOR EQUIP",25,"Discipline","06:45"],["GATE TRANSIT",30,"Focus","07:00"],["DUNGEON OPEN",100,"Discipline","07:30"],["WATER RAID I",50,"Nutrition","10:00"],["STAND BREAK I",30,"Fitness","10:30"],["EXTRACTION I",100,"Focus","11:00"],["MAIN QUEST MEAL",75,"Nutrition","12:00"],["WATER RAID II",50,"Nutrition","13:00"],["STAND BREAK II",30,"Fitness","13:30"],["EXTRACTION II",100,"Focus","14:00"],["WATER RAID III",50,"Nutrition","15:00"],["STAND BREAK III",30,"Fitness","15:30"],["EXTRACTION III",100,"Focus","16:00"],["DUNGEON CLEAR",75,"Discipline","17:00"],["RETURN GATE",30,"Discipline","17:30"],["RESPAWN POINT",25,"Discipline","18:00"],["BOSS PREP",25,"Nutrition","19:00"],["SHADOW WARMUP",50,"Fitness","19:45"],["SHADOW RAID",200,"Fitness","20:00"],["RECOVERY RATIONS",75,"Nutrition","21:15"],["WATER RAID IV",50,"Nutrition","21:30"],["REST PHASE",30,"Discipline","22:00"],["SHADOW SLEEP",200,"Discipline","23:00"]];
+const CAT = { Discipline: 'var(--series-1)', Fitness: 'var(--series-2)', Nutrition: 'var(--series-3)', Focus: 'var(--series-4)' };
+const CATS = Object.keys(CAT);
+
+const PROJECTS = [
+  { k: 'p-otherside', name: 'The Other Side', sub: 'ECHO · Lane B', c: 'var(--series-1)', st: ['To deploy', 'var(--warning)'] },
+  { k: 'p-elevate', name: 'ELEVATE', sub: 'blueprint inference', c: 'var(--series-2)', st: ['Pilot', 'var(--serious)'] },
+  { k: 'p-radar', name: 'Acquisition Radar', sub: '358 → 7', c: 'var(--series-3)', st: ['Live', 'var(--good)'] },
+  { k: 'p-smp', name: 'Shadow Monarch', sub: 'PWA · Discord', c: 'var(--series-4)', st: ['Live', 'var(--good)'] },
+  { k: 'p-body', name: 'Body Chronicle', sub: 'protein ring', c: 'var(--series-5)', st: ['Live', 'var(--good)'] },
+  { k: 'p-comps', name: 'Comps Database', sub: 'Excel · KML · Dealpath', c: 'var(--series-6)', st: ['Building', 'var(--warning)'] },
+];
+
+const DEPTS = [
+  { k: 'd-prod', name: 'Product + Engineering', n: 6, c: 'var(--series-1)', agents: ['product-manager', 'tech-lead', 'frontend-engineer', 'backend-engineer', 'code-reviewer', 'qa-engineer'] },
+  { k: 'd-design', name: 'Design + Research', n: 3, c: 'var(--series-2)', agents: ['product-designer', 'ux-researcher', 'market-researcher'] },
+  { k: 'd-growth', name: 'Growth + Launch', n: 3, c: 'var(--series-3)', agents: ['launch-manager', 'content-strategist', 'data-scientist'] },
+  { k: 'd-ops', name: 'Ops + Integrity', n: 3, c: 'var(--series-4)', agents: ['privacy-security-reviewer', 'release-engineer', 'cost-controller'] },
+];
+
+const STAGES = [
+  { k: 's-spec', n: 'Spec', who: 'product-manager', what: 'Why and what, on one page: problem, users, success metric, non-goals, scope cuts.' },
+  { k: 's-design', n: 'Design', who: 'tech-lead · product-designer', what: 'Design doc and a plan of small diffs, plus flows and real copy, in parallel.' },
+  { k: 's-build', n: 'Build', who: 'engineers · code-reviewer', what: 'Each small diff built, then reviewed: Blocking, Should fix, Nit, verdict. Two rounds max.' },
+  { k: 's-qa', n: 'QA', who: 'qa-engineer', what: 'End to end, with real runs, and a list of what still needs a human.' },
+  { k: 's-gate', n: 'Gate', who: 'privacy · cost · launch', what: 'Privacy, cost and launch reviews run in parallel. Any block stops the ship.', gate: true },
+  { k: 's-ready', n: 'Ready', who: 'content · release · Prat', what: 'Release notes written and the deploy prepared. Only you approve the push.' },
+];
+
+const GATE = ['SwiftUI MVP created', 'Create a focus quest (title, duration, reminder)', 'Local notifications, system-alert style', 'Focus session with countdown', 'Complete a session and award XP', 'S-Rank Gate progress screen', 'Code committed to the repo', 'Demo recorded or screenshots captured'];
+
+// planned minutes per weekday from the lane system: Mon–Fri 30, Sat 180, Sun 15
+const RHYTHM = [30, 30, 30, 30, 30, 180, 15];
+
+/* ---------------- detail cards ---------------- */
+const D = {
+  laneA: {
+    eb: 'Lane A', t: 'Director of AI & BI', lede: 'The case for Director at Woodmont, built toward a Q4 conversation. Your edge is rare: CRE business context, the enterprise data stack and AI tooling, all in one head.',
+    m: [['Q4 2026', 'conversation target'], ['15', 'agents in your factory'], ['358 → 7', 'radar funnel'], ['Aug 2026', 'website shipped w/ CEO']],
+    viz: 'funnel',
+    h: 'Proof you already have', l: ['Agent Factory: a 15-agent org with gated shipping, a launch review and postmortems', 'Acquisition Radar for the President and VP: 358 screened → 51 verified → 27 shortlist → 7 in the field', 'Woodmont website rebuild, shipped with the CEO in Aug 2026', 'You lead the internal AI Task Force', 'Yardi Support and Triage agents (user error vs system error)', 'Comps Database automation, Industrial News Briefing, Weekly Command Center'],
+    next: 'Write the one-page Director case: the problem, what you built, hours saved, and what you would run next quarter. Use Agent Factory and the Radar as the two headline proofs.',
+    src: 'From your profile and the Agent Factory page.'
+  },
+  drafts: {
+    eb: 'Memory', t: 'How I remember you', lede: "I don't keep our chats between sessions. I rebuild you every time from what you leave behind: your repos and your Gmail drafts, where Chakra and I pass the work.",
+    m: [['0', 'chat memory'], ['2', 'repos I read today'], ['May 8', 'first Igris ↔ Chakra handoff'], ['Oct 11', 'latest debrief draft']],
+    h: 'What the drafts hold', l: ['Apr 3: the A-Rank jump, +1,345 XP in one session', 'May 7: Shadow Body Protocol Day 4, 102 g protein against a 150 g floor', 'May 8–9: the Chakra Link went live; Oracle ARM verified', 'May 15: the ASCENDED dashboard and a million-dollar pipeline with 12 programs', 'Oct 2: the ECHO relay to ChatGPT', 'Oct 11: today’s session debrief'],
+    next: 'Keep ending sessions with a debrief draft. It is the only memory that survives.',
+    src: 'From your Gmail drafts and billu1012/shadow-monarch-bot.'
+  },
+  gate: {
+    eb: 'S-Rank', t: 'The gate is locked', lede: 'XP alone cannot open it. To unlock S-Rank you have to ship the iOS Focus Remind app MVP in Swift/SwiftUI, and run and demo it yourself.',
+    m: [['0 / 8', 'conditions met'], ['2,395', 'XP (A-Rank)'], ['No shortcuts', 'sync and polish don’t count']],
+    viz: 'checklist',
+    next: 'Condition 1: create the SwiftUI project and get one screen on your phone. That alone moves the gate.',
+    src: 'From docs/S_RANK_GATE.md.'
+  },
+  projects: {
+    eb: 'Projects', t: 'Six on the board', lede: 'You run about 25 projects. These six matter most right now; tap any row on the dashboard for its card.',
+    viz: 'projects',
+    next: 'The play lane is frozen until Jan 1, 2027. New ideas go on a list, not into a repo.',
+    src: 'From your profile.'
+  },
+  'p-otherside': {
+    eb: 'Lane B · Hackathon', t: 'The Other Side · ECHO', lede: 'A voice-first future-self AI. Tell ECHO who you want to be; it builds daily missions and lets you cross into four simulated futures, where a portrait of future you talks back.',
+    m: [[() => 'T-' + daysLeft(), 'days to Oct 30'], ['123 + 51', 'tests passing'], ['Go*', 'launch review'], ['Dec 15', 'judges until']],
+    h: 'Done today', l: ['main now holds the full app (it was the stub)', 'Hardening: voice cap, per-IP rate limit, no 4xx retries, key required', 'Cap lockout fixed: judges get a limited session, not a dead app', 'Your AI portrait is the stand-in face'],
+    next: 'Deploy main to Railway. You rotate the Nebius key and set the judge password. Then record the video under 3 minutes.',
+    src: 'prcasley/future-self @ bcbf268. *Go with conditions.'
+  },
+  'p-elevate': {
+    eb: 'CRE thesis', t: 'ELEVATE', lede: 'Your construction and civil blueprint inference engine. A rendering or elevation costs $10–40k; that cost is the target. It started as the CEO’s own ask around 2025.',
+    m: [['$10–40k', 'per rendering today'], ['Pilot', 'photos → elevations (Gemini)']],
+    next: 'Run the launch-review and cost-per-inference method from today on the elevation pilot before you show the CEO.',
+    src: 'From your profile. Nothing in this session touched ELEVATE.'
+  },
+  'p-radar': {
+    eb: 'Capital Markets', t: 'Acquisition Radar', lede: 'AI-filtered industrial land screening for the President and VP, across Florida and Northern New Jersey, expanding into Pennsylvania.',
+    viz: 'funnel',
+    next: 'Each of the 7 in field review needs an owner and a decision date.',
+    src: 'From your profile.'
+  },
+  'p-smp': {
+    eb: 'Personal OS', t: 'Shadow Monarch Protocol', lede: 'A Solo Leveling productivity system: 26 time-locked daily quests, a React/Vite PWA with an Express backend on Railway, a Discord bot and iMessage one-tap completion.',
+    m: [['26', 'daily quests'], ['1,680', 'XP available / day'], ['06:00', 'SYSTEM BOOT']],
+    viz: 'cats',
+    next: 'Ascend is the productized version with HealthKit verification.',
+    src: 'From lifeos/data/quests.smp.json in this repo.'
+  },
+  'p-body': {
+    eb: 'Shadow Body Protocol', t: 'Body Chronicle', lede: 'A matte-black fitness dashboard with a protein ring, one-tap meal logging and Power BI. The Day 4 log found the one bottleneck: protein density.',
+    m: [['150 g', 'protein floor'], ['112 g', '4-day average'], ['4–5×', 'lifts per week']],
+    viz: 'protein',
+    next: 'Front-load protein at breakfast. 4 eggs beat avocado toast.',
+    src: 'From the May 7 Day 4 log in your drafts.'
+  },
+  'p-comps': {
+    eb: 'Industrial', t: 'Comps Database', lede: 'Automating the industrial comps: the master Excel, KML map layers and the weekly Dealpath export, kept in sync without hand-copying.',
+    next: 'Pick one weekly export and make it hands-free end to end first.',
+    src: 'From your profile.'
+  },
+  rank: {
+    eb: 'Rank', t: 'A-Rank · 2,395 XP', lede: 'On Apr 3 you jumped from B to A in one session: +1,345 XP, including 10 projects in a week. I also logged −300 for zero gym sessions that week.',
+    m: [['2,395', 'XP'], ['405', 'to the S threshold'], ['0 / 8', 'gate conditions']],
+    viz: 'ladder',
+    next: 'Even at 2,800 XP, S stays locked until the gate opens.',
+    src: 'From the Apr 3 quest-log draft.'
+  },
+  quests: {
+    eb: 'Daily quests', t: '26 quests, 1,680 XP a day', lede: 'From SYSTEM BOOT at 06:00 to SHADOW SLEEP at 23:00. Bars show XP by time of day, colored by category.',
+    viz: 'cats',
+    next: 'SHADOW RAID (gym, 200) and SHADOW SLEEP (200) are a quarter of the day’s XP between them.',
+    src: 'From lifeos/data/quests.smp.json.'
+  },
+  rhythm: {
+    eb: 'Lane system', t: 'Build rhythm', lede: 'Your planned build time for the rest of 2026: 30 minutes before work Monday to Friday, a 3-hour block on Saturday and a 15-minute review on Sunday.',
+    m: [['345', 'planned min / week'], ['3 h', 'Saturday block'], ['Jan 1', 'play lane unfreezes']],
+    viz: 'rhythm',
+    next: 'This is the plan, not a log. Wire quest completions in to show actuals.',
+    src: 'From your profile.'
+  },
+  factory: {
+    eb: 'Agent Factory', t: 'Your 15-agent company', lede: 'Run like a big tech company: specs before code, every change reviewed, privacy and launch reviews before anything ships. You are CEO; my session is the engineering manager.',
+    m: [['15', 'agents'], ['4', 'departments'], ['8', 'commands'], ['3', 'gates before launch']],
+    viz: 'factory',
+    h: 'House rules', l: ['Agents never push, deploy, delete, spend or message anyone without you', 'Every change ships with a Summary and a Test Plan', 'Nothing mocked is shown as live'],
+    next: 'Push prcasley/agent-factory to GitHub so the install line works.',
+    src: 'From your Agent Factory page. 5 of 5 board tests pass.'
+  },
+  council: {
+    eb: 'The Council', t: 'Who does what', lede: 'ChatGPT picks, I spec, Codex builds, I triple-check, you ship.',
+    h: 'The cast', l: ['CHAKRA (ChatGPT): The Strategist, picks ideas and advises', 'IGRIS (me, Claude): project manager, documenter, memory', 'CODEX: the builder on your Windows PC', 'BERU: the shadow soldier, scouts research', 'Gemini, the Infinite Dragon; Coach GPT, the Guardian Dragon'],
+    src: 'From your profile.'
+  },
+  'k-boot': { eb: 'Discipline', t: 'SYSTEM BOOT · 06:00', lede: 'The first of 26 quests, 50 XP. Everything else unlocks after it.', src: 'quests.smp.json' },
+  'k-lifts': { eb: 'Non-negotiable', t: '4–5 lifts a week', lede: 'Training is the one thing that never moves. On the quest map it is SHADOW RAID, 200 XP, at 20:00.', m: [['200', 'XP per raid'], ['−300', 'week with zero gym (Apr)']] },
+  'k-frozen': { eb: 'Lane system', t: 'Play lane: frozen', lede: 'Everything outside Lane A (Director) and Lane B (The Other Side) is frozen to new additions until Jan 1, 2027.', next: 'New ideas go on a list. Ember, Virtual Fridge and the rest wait.' },
+  'k-tests': { alias: 'p-otherside' },
+  'k-memory': { alias: 'drafts' },
+  'k-days': { alias: 'p-otherside' },
+};
+STAGES.forEach((s, i) => { D[s.k] = { eb: 'Ship pipeline · ' + (i + 1) + ' of 6', t: s.n, lede: s.what, m: [[s.who, 'owner']], next: s.gate ? 'Today I ran this gate by hand on ECHO: QA, privacy and cost, all Go with conditions.' : undefined, src: '/agent-factory:ship' }; });
+DEPTS.forEach(d => { D[d.k] = { eb: 'Agent Factory', t: d.name, lede: d.n + ' agents.', h: 'Agents', l: d.agents }; });
+
+/* ---------------- chart builders (Matte rules: text in text tokens, legend for 2+ series) ---------------- */
+function seqFor(m) { return m >= 180 ? 'var(--seq-600)' : m >= 30 ? 'var(--seq-400)' : m > 0 ? 'var(--seq-200)' : 'var(--surface-3)'; }
+function vizFunnel() {
+  const st = [['Screened', 358], ['Verified', 51], ['Shortlist', 27], ['Field review', 7]], w = 480, rowH = 34;
+  return `<svg class="chart" viewBox="0 0 ${w} ${st.length * rowH}">${st.map(([n, v], i) => {
+    const bw = Math.max(6, (v / 358) * (w - 170));
+    return `<g data-tip="${n}|${v} sites"><rect x="120" y="${i * rowH + 4}" width="${bw}" height="22" rx="4" fill="var(--seq-${[300, 400, 500, 600][i]})"/><text x="0" y="${i * rowH + 20}" font-size="14">${n}</text><text x="${126 + bw}" y="${i * rowH + 20}" font-size="14" style="fill:var(--text-primary)">${v}</text></g>`;
+  }).join('')}</svg>`;
+}
+function vizChecklist() {
+  return `<ul style="list-style:none;padding:0;margin:0">${GATE.map((g, i) => `<li style="display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)"><span class="chip" style="--c:var(--critical)">${i + 1}</span><span>${g}</span></li>`).join('')}</ul>`;
+}
+function vizProjects() {
+  return `<div style="display:grid;gap:10px">${PROJECTS.map(p => `<div style="display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:center"><span class="dot" style="background:${p.c}"></span><span><b>${p.name}</b> <span style="color:var(--text-muted)">${p.sub}</span></span><span class="chip" style="--c:${p.st[1]}">${p.st[0]}</span></div>`).join('')}</div>`;
+}
+function catTotals() { const t = {}; QUESTS.forEach(q => { t[q[2]] = (t[q[2]] || 0) + q[1]; }); return t; }
+function questTimeline(w, h) {
+  const t0 = 6 * 60, t1 = 23.5 * 60, base = h - 18, bw = Math.max(3, w / 70);
+  const bars = QUESTS.map(([n, xp, c, tm]) => {
+    const [hh, mm] = tm.split(':').map(Number), x = ((hh * 60 + mm) - t0) / (t1 - t0) * (w - bw), bh = xp / 200 * (base - 6);
+    return `<rect x="${x.toFixed(1)}" y="${(base - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="1.5" fill="${CAT[c]}" data-tip="${tm} · ${n}|${c} · ${xp} XP"/>`;
+  }).join('');
+  const ticks = [6, 12, 18, 23].map(hr => { const x = (hr * 60 - t0) / (t1 - t0) * (w - bw); return `<text x="${x.toFixed(1)}" y="${h - 3}" font-size="${w > 300 ? 12 : 9}" text-anchor="${hr === 23 ? 'end' : 'start'}">${String(hr).padStart(2, '0')}:00</text>`; }).join('');
+  return `<svg class="chart" viewBox="0 0 ${w} ${h}"><line x1="0" x2="${w}" y1="${base}" y2="${base}" stroke="var(--axis)"/>${bars}${ticks}</svg>`;
+}
+function vizCats() {
+  const t = catTotals(), tot = Object.values(t).reduce((a, b) => a + b, 0), w = 480;
+  let x = 0;
+  const seg = CATS.map(c => { const bw = t[c] / tot * w, r = `<rect x="${x.toFixed(1)}" y="0" width="${Math.max(0, bw - 2).toFixed(1)}" height="22" rx="4" fill="${CAT[c]}" data-tip="${c}|${t[c]} XP · ${Math.round(t[c] / tot * 100)}%"/>`; x += bw; return r; }).join('');
+  return `<svg class="chart" viewBox="0 0 ${w} 22">${seg}</svg>${questTimeline(480, 120)}<div class="legend">${CATS.map(c => `<span><i style="background:${CAT[c]}"></i>${c} · ${t[c]} XP</span>`).join('')}</div>`;
+}
+function vizProtein() {
+  const days = [['Mon', 63], ['Tue', 142], ['Wed', 139], ['Thu', 102]], w = 480, h = 170, base = 140, sc = 120 / 160, fy = base - 150 * sc;
+  const bars = days.map(([d, v], i) => { const x = 50 + i * 105, bh = v * sc; return `<g data-tip="${d}|${v} g protein"><rect x="${x}" y="${base - bh}" width="64" height="${bh}" rx="4" fill="var(--series-5)"/><text x="${x + 32}" y="${base - bh - 6}" text-anchor="middle" font-size="14" style="fill:var(--text-primary)">${v} g</text><text x="${x + 32}" y="${base + 18}" text-anchor="middle" font-size="13">${d}</text></g>`; }).join('');
+  return `<svg class="chart" viewBox="0 0 ${w} ${h}"><line x1="40" x2="${w}" y1="${base}" y2="${base}" stroke="var(--axis)"/><line x1="40" x2="${w}" y1="${fy}" y2="${fy}" stroke="var(--warning)" stroke-dasharray="5 4"/><circle cx="${w - 118}" cy="${fy - 10}" r="4" fill="var(--warning)"/><text x="${w}" y="${fy - 6}" text-anchor="end" font-size="13">floor 150 g</text>${bars}</svg><p class="src" style="margin-top:4px">None of the four days reached the floor; Tue and Wed came closest.</p>`;
+}
+function vizLadder() {
+  const r = ['E', 'D', 'C', 'B', 'A', 'S'], w = 480;
+  return `<svg class="chart" viewBox="0 0 ${w} 74">${r.map((x, i) => { const on = i <= 4, cur = i === 4; return `<rect x="${i * 80}" y="${cur ? 4 : 14}" width="74" height="${cur ? 44 : 34}" rx="6" fill="${i === 5 ? 'none' : on ? 'var(--series-7)' : 'var(--surface-3)'}" ${i === 5 ? 'stroke="var(--critical)" stroke-dasharray="4 3"' : ''} opacity="${on && !cur ? 0.5 : 1}"/><text x="${i * 80 + 37}" y="${cur ? 32 : 36}" text-anchor="middle" font-size="16" font-weight="700" style="fill:var(--text-primary)">${x}</text>`; }).join('')}<circle cx="418" cy="66" r="4" fill="var(--critical)"/><text x="428" y="70" font-size="12">locked</text></svg>`;
+}
+function vizRhythm() {
+  const d = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], w = 480, base = 150;
+  return `<svg class="chart" viewBox="0 0 ${w} 180"><line x1="0" x2="${w}" y1="${base}" y2="${base}" stroke="var(--axis)"/>${RHYTHM.map((m, i) => { const bh = m / 180 * 120, x = 8 + i * 67; return `<g data-tip="${d[i]}|${m} min planned"><rect x="${x}" y="${base - bh}" width="52" height="${bh}" rx="4" fill="${seqFor(m)}"/><text x="${x + 26}" y="${base - bh - 6}" text-anchor="middle" font-size="13" style="fill:var(--text-primary)">${m}</text><text x="${x + 26}" y="${base + 18}" text-anchor="middle" font-size="13">${d[i]}</text></g>`; }).join('')}</svg>`;
+}
+function vizFactory() {
+  return `<div class="stack" style="height:18px">${DEPTS.map(d => `<i style="flex:${d.n};background:${d.c}" data-tip="${d.name}|${d.n} agents"></i>`).join('')}</div>
+    <div style="display:grid;gap:10px;margin-top:12px">${DEPTS.map(d => `<div><div style="display:flex;align-items:center;gap:8px;font-weight:600"><i style="width:10px;height:10px;border-radius:2px;background:${d.c}"></i>${d.name} <span style="color:var(--text-muted);font-weight:400">· ${d.n}</span></div><div style="color:var(--text-secondary);font:13px/1.6 var(--mono);padding-left:18px">${d.agents.join(' · ')}</div></div>`).join('')}</div>`;
+}
+const VIZ = { funnel: vizFunnel, checklist: vizChecklist, projects: vizProjects, cats: vizCats, protein: vizProtein, ladder: vizLadder, rhythm: vizRhythm, factory: vizFactory };
+
+/* ---------------- render dashboard ---------------- */
+$('stages').innerHTML = STAGES.map((s, i) => `<button class="panel tap stage${s.gate ? ' gate' : ''}" data-d="${s.k}" id="st${i}"><em>0${i + 1}</em><b>${s.n}</b><span>${s.who.split(' · ')[0]}</span><div class="bar"><i></i></div></button>`).join('');
+$('plist').innerHTML = PROJECTS.map(p => `<div class="prow" data-d="${p.k}" role="button" tabindex="0"><span class="dot" style="background:${p.c}"></span><span><b>${p.name}</b><small>${p.sub}</small></span><span class="chip" style="--c:${p.st[1]}">${p.st[0]}</span></div>`).join('');
+$('rankChart').innerHTML = ['E', 'D', 'C', 'B', 'A', 'S'].map((r, i) => `<rect x="${i * 37}" y="${i === 4 ? 6 : 16}" width="33" height="${i === 4 ? 40 : 30}" rx="4" fill="${i === 5 ? 'none' : 'var(--series-7)'}" ${i === 5 ? 'stroke="var(--critical)" stroke-dasharray="3 3"' : ''} opacity="${i < 4 ? 0.5 : 1}"/><text x="${i * 37 + 16.5}" y="${i === 4 ? 32 : 36}" text-anchor="middle" font-size="13" font-weight="700" style="fill:#fff">${r}</text>`).join('') + '<text x="203" y="60" text-anchor="middle" font-size="9">locked</text>';
+$('questChart').outerHTML = questTimeline(220, 96).replace('<svg class="chart"', '<svg class="chart" id="questChart"');
+$('questLegend').innerHTML = CATS.map(c => `<span><i style="background:${CAT[c]}"></i>${c}</span>`).join('');
+$('qxp').textContent = Object.values(catTotals()).reduce((a, b) => a + b, 0).toLocaleString();
+$('stack').innerHTML = DEPTS.map(d => `<i style="flex:${d.n};background:${d.c}"></i>`).join('');
+$('drows').innerHTML = DEPTS.map(d => `<div data-d="${d.k}" role="button" tabindex="0"><i style="background:${d.c}"></i><span>${d.name}</span><b class="num">${d.n}</b></div>`).join('') + `<div data-d="council" role="button" tabindex="0"><i style="background:var(--series-7)"></i><span>Council</span><b class="num">4</b></div>`;
+(function gauge() {
+  const cx = 85, cy = 88, r = 64, seg = 8, a0 = Math.PI * 1.1, a1 = Math.PI * 1.9, p = a => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  let s = '';
+  for (let i = 0; i < seg; i++) {
+    const [x0, y0] = p(a0 + (a1 - a0) * i / seg + 0.03), [x1, y1] = p(a0 + (a1 - a0) * (i + 1) / seg - 0.03);
+    s += `<path d="M${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${r} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}" stroke="${i === 0 ? 'var(--critical)' : 'var(--surface-3)'}" stroke-width="12" fill="none"/>`;
+  }
+  s += `<line x1="${cx}" y1="${cy}" x2="${(cx + 52 * Math.cos(a0)).toFixed(1)}" y2="${(cy + 52 * Math.sin(a0)).toFixed(1)}" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="5" fill="#fff"/>`;
+  $('gauge').innerHTML = s;
+})();
+const DAYN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+$('hm').innerHTML = '<span></span>' + ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(d => `<span>${d}</span>`).join('') +
+  Array.from({ length: 6 }, (_, w) => `<span>W${w + 1}</span>` + RHYTHM.map((m, i) => `<i style="background:${seqFor(m)}" data-tip="Week ${w + 1}, ${DAYN[i]}|${m} min planned"></i>`).join('')).join('');
+const KPIS = [['k-days', () => 'T-' + daysLeft(), 'days to Oct 30'], ['k-boot', '06:00', 'system boot'], ['k-lifts', '4–5×', 'lifts / week'], ['k-tests', '123 + 51', 'ECHO tests passing'], ['k-memory', '0', 'chat memory'], ['k-frozen', 'Frozen', 'play lane → Jan 1']];
+$('kpis').innerHTML = KPIS.map(([k, v, l]) => `<button class="panel tap kpi" data-d="${k}"><span class="more">⤢</span><span class="v num">${typeof v === 'function' ? v() : v}</span><small>${l}</small></button>`).join('');
+$('tminus').textContent = 'T-' + daysLeft();
+
+/* ---------------- code + log ---------------- */
+const FILES = [
+  ['igris.ts', `// igris.ts · engineering manager of the agent factory
+import { drafts, repo } from '@prat/memory';
+import { factory } from 'agent-factory';    // 15 agents · 4 depts
+
+export const Igris = () => {
+  const prat = rebuild(drafts, repo);        // no chat memory
+  const idea = prat.lanes.B;                 // the other side
+  return factory.ship(idea, {
+    gates: ['privacy', 'cost', 'launch'],    // any block stops it
+    approve: prat,                           // ceo: push · deploy · spend
+  });
+};`],
+  ['handoff.md', `# Igris → Chakra · handoff · Oct 11
+Brother — read this start-of-session.
+
+- main: full app, 123 + 51 tests green
+- cap lockout fixed · limited session, not a dead app
+- stand-in face: Prat's AI portrait
+- left: deploy · video · credits · devpost claims
+
+"The shadows obey discipline, not effort."`],
+  ['gate.swift', `// gate.swift · S-RANK · xp alone cannot open it
+struct SRankGate: View {
+  @State var met = 0       // of 8
+  var body: some View {
+    FocusQuest(title: "ship", minutes: 30)
+      .notify(.systemAlert)
+      .onComplete { met += 1; xp += 200 }
+  }
+}
+
+// ship the app.`]
+];
+function hl(line) {
+  const ci = line.search(/\/\/|^#/);
+  const body = ci >= 0 ? line.slice(0, ci) : line, com = ci >= 0 ? line.slice(ci) : '';
+  const out = esc(body).replace(/(&quot;|"|')(.*?)\1/g, m => `<span class="s">${m}</span>`).replace(/\b(import|from|export|const|return|struct|var|some)\b/g, '<span class="k">$1</span>');
+  return out + (com ? `<span class="c">${esc(com)}</span>` : '');
+}
+let tabIdx = -1, lastChars = -1;
+function renderCode(fi, chars) {
+  if (fi !== tabIdx) { tabIdx = fi; lastChars = -1; $('tabs').innerHTML = FILES.map((f, i) => i === fi ? `<b>${f[0]}</b>` : `<span>${f[0]}</span>`).join('') + '<span class="lv">live</span>'; }
+  if (chars === lastChars) return; lastChars = chars;
+  const lines = FILES[fi][1].slice(0, chars).split('\n'), last = lines.length - 1;
+  $('code').innerHTML = lines.map((l, i) => { const h = `<span class="ln">${String(i + 1).padStart(2, '0')}</span>${hl(l)}${i === last ? '<span class="caret"></span>' : ''}`; return i === last ? `<span class="cl">${h}</span>` : h + '\n'; }).join('');
+}
+const WHO = { quest: 'var(--series-4)', penalty: 'var(--series-8)', igris: 'var(--series-7)', body: 'var(--series-5)', chakra: 'var(--series-2)', prat: 'var(--series-1)', woodmont: 'var(--series-3)', factory: 'var(--series-6)', gate: 'var(--series-8)' };
+const LOG = [['04.03', 'quest', 'B → A-Rank · +1,345 XP', '✓'], ['04.03', 'penalty', 'zero gym sessions', '−300'], ['04.16', 'igris', 'build pings every 30 min', '✓'], ['05.07', 'body', 'protein 102 g / 150 g', '−48 g'], ['05.08', 'chakra', 'Chakra Link live', '✓'], ['05.09', 'igris', 'Oracle ARM verified', '✓'], ['05.15', 'chakra', 'ASCENDED dashboard', 'ship'], ['05.15', 'chakra', 'pipeline · 12 programs', '$0'], ['06.12', 'prat', 'OPERATION: ASCENSION', '10 d'], ['08.--', 'woodmont', 'website rebuild w/ CEO', 'ship'], ['10.02', 'igris', 'ECHO relay → ChatGPT', '✓'], ['10.04', 'igris', 'Inside Igris', '✓'], ['10.11', 'factory', '15 agents · 4 depts', 'hire'], ['10.11', 'igris', 'ECHO launch review', 'Go*'], ['10.11', 'igris', 'main: 123 + 51 tests', '✓'], ['10.11', 'gate', 'S-Rank 0 / 8', 'lock']];
+let logN = 0;
+function pushLog() {
+  const rows = [];
+  for (let i = Math.max(0, logN - 11); i <= logN; i++) rows.push([LOG[i % LOG.length], i === logN]);
+  $('log').innerHTML = rows.map(([[d, a, m, r], n]) => `<div class="${n ? 'new' : ''}"><span>[${d}]</span><span class="who" style="--c:${WHO[a]}">${a}</span><span class="msg">${esc(m)}</span><span class="r">${r}</span></div>`).join('');
+  logN++;
+}
+
+/* ---------------- torus ---------------- */
+const wrap = $('stagewrap'), cv = $('torus'), g0 = cv.getContext('2d');
+const off = document.createElement('canvas'), g = off.getContext('2d');
+let CW = 600, CH = 600, PR = 1;
+function sizeCanvas() { CW = wrap.clientWidth; CH = wrap.clientHeight; PR = Math.min(2, devicePixelRatio || 1); cv.width = off.width = Math.max(1, Math.round(CW * PR)); cv.height = off.height = Math.max(1, Math.round(CH * PR)); }
+sizeCanvas();
+if (window.ResizeObserver) new ResizeObserver(sizeCanvas).observe(wrap); else addEventListener('resize', sizeCanvas);
+const smallQ = matchMedia('(max-width: 720px)');
+const N = reduce ? 5000 : smallQ.matches ? 7000 : 13000;
+const SU = new Float32Array(N), SV = new Float32Array(N), SD = new Float32Array(N), SW = new Float32Array(N), ST = new Float32Array(N), SR = new Float32Array(N);
+for (let i = 0; i < N; i++) { SU[i] = Math.random() * 6.2832; SV[i] = Math.random() * 6.2832; SD[i] = 0.08 + Math.random() * 0.34; SW[i] = Math.random(); ST[i] = 0.02 + (Math.random() - 0.5) * 0.05; SR[i] = 0.9 + Math.pow(Math.random(), 2) * 0.28; }
+const cam = { pitch: 1.05, spin: 0, scale: 1, roll: 0 };
+function P(u, v, rr = 1) {
+  const cr = 0.46 * rr, x = (1 + cr * Math.cos(v)) * Math.cos(u), y = (1 + cr * Math.cos(v)) * Math.sin(u), z = cr * Math.sin(v);
+  const cs = Math.cos(cam.spin), ss = Math.sin(cam.spin), x1 = x * cs - y * ss, y1 = x * ss + y * cs;
+  const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch), y2 = y1 * cp - z * sp, z2 = y1 * sp + z * cp;
+  const c2 = Math.cos(cam.roll), s2 = Math.sin(cam.roll), x3 = x1 * c2 - y2 * s2, y3 = x1 * s2 + y2 * c2;
+  const f = Math.min(CW, CH) * 0.95 * cam.scale, zc = z2 + 3.4;
+  return [CW / 2 + x3 * f / zc, CH * 0.56 + y3 * f / zc, z2];
+}
+const BUCK = 10, paths = Array.from({ length: BUCK * 2 }, () => []);
+const L = (() => { const v = [0.45, -0.55, -0.7], m = Math.hypot(...v); return v.map(x => x / m); })();
+function drawTorus(t) {
+  g.setTransform(PR, 0, 0, PR, 0, 0); g.clearRect(0, 0, CW, CH);
+  for (const p of paths) p.length = 0;
+  const flow = t * 0.22, cs = Math.cos(cam.spin), ss = Math.sin(cam.spin), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+  for (let i = 0; i < N; i++) {
+    const u = SU[i] + ST[i] * Math.sin(t * 0.3 + i), v = SV[i] + flow;
+    const a = P(u, v, SR[i]), b = P(u + ST[i], v + SD[i], SR[i]);
+    const nx0 = Math.cos(v) * Math.cos(u), ny0 = Math.cos(v) * Math.sin(u), nz0 = Math.sin(v);
+    const nx1 = nx0 * cs - ny0 * ss, ny1 = nx0 * ss + ny0 * cs, ny2 = ny1 * cp - nz0 * sp, nz2 = ny1 * sp + nz0 * cp;
+    const lam = Math.max(0, nx1 * L[0] + ny2 * L[1] + nz2 * L[2]);
+    const br = (0.16 + lam * lam * 1.25 + Math.pow(1 - Math.abs(nz2), 3) * 0.5) * (0.6 + 0.4 * (1 - (a[2] + 1.5) / 3));
+    const k = Math.min(BUCK - 1, Math.floor(br * BUCK)); if (k <= 0) continue;
+    paths[(SW[i] < 0.14 ? BUCK : 0) + k].push(a[0], a[1], b[0], b[1]);
+  }
+  g.globalCompositeOperation = 'lighter'; g.lineWidth = 0.75; g.lineCap = 'round';
+  for (let c = 0; c < 2; c++) for (let k = 1; k < BUCK; k++) {
+    const arr = paths[c * BUCK + k]; if (!arr.length) continue;
+    const al = Math.pow(k / BUCK, 1.4) * 0.75;
+    g.strokeStyle = c ? `rgba(245,195,120,${al})` : `rgba(${170 + k * 9},${120 + k * 13},255,${al})`;
+    g.beginPath(); for (let j = 0; j < arr.length; j += 4) { g.moveTo(arr[j], arr[j + 1]); g.lineTo(arr[j + 2], arr[j + 3]); } g.stroke();
+  }
+  g.globalCompositeOperation = 'source-over';
+  g0.setTransform(1, 0, 0, 1, 0, 0); g0.clearRect(0, 0, cv.width, cv.height); g0.globalCompositeOperation = 'lighter';
+  if (!reduce) { g0.filter = `blur(${Math.round(9 * PR)}px)`; g0.globalAlpha = 0.9; g0.drawImage(off, 0, 0); g0.filter = 'none'; g0.globalAlpha = 1; }
+  g0.drawImage(off, 0, 0); g0.globalCompositeOperation = 'source-over';
+}
+const TAGS = [['Agent Factory · 15', 1.5, 0.3, 'var(--series-6)', 'factory'], ['launch gate', 3.4, -0.6, 'var(--gold)', 's-gate'], ['codex · build', 2.6, 1.0, 'var(--series-7)', 's-build'], ['chakra · picks', 0.4, 1.2, 'var(--series-2)', 'council'],
+  [`ECHO · T-${daysLeft()}`, 4.2, 0.9, 'var(--series-1)', 'p-otherside'], ['A-Rank · 2,395', 5.0, 0.2, 'var(--series-7)', 'rank'], ['358 → 7', 5.8, 1.4, 'var(--series-3)', 'p-radar'], ['150 g floor', 0.9, 2.6, 'var(--series-5)', 'p-body'], ['lift 4–5× / wk', 3.9, 2.2, 'var(--series-2)', 'k-lifts'], ['gate 0 / 8', 2.1, 2.9, 'var(--critical)', 'gate']];
+$('tags').innerHTML = TAGS.map(([t, , , c, k], i) => `<button class="tag" id="tg${i}" data-d="${k}" style="--c:${c}">${esc(t)}</button>`).join('');
+const LEADS = [['.box.a', 0], ['.box.b', 3], ['.box.c', 9]];
+function placeTags() {
+  const pos = TAGS.map(([, u, v], i) => {
+    const p = P(u, v, 1.04), el = $('tg' + i), offs = p[0] < 40 || p[0] > CW - 40 || p[1] < 14 || p[1] > CH - 14;
+    el.style.left = p[0] + 'px'; el.style.top = p[1] + 'px'; el.style.opacity = offs ? 0 : p[2] > 0.25 ? 0.45 : 1; el.style.pointerEvents = offs ? 'none' : 'auto';
+    return p;
+  });
+  if (smallQ.matches) return;
+  const wr = wrap.getBoundingClientRect();
+  $('leads').innerHTML = LEADS.map(([sel, ti]) => { const r = document.querySelector(sel).getBoundingClientRect(), p = pos[ti], bx = r.left - wr.left + r.width / 2, by = r.top - wr.top + r.height / 2; return `<line x1="${bx.toFixed(1)}" y1="${by.toFixed(1)}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}" stroke="rgba(255,255,255,.3)"/><circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="#fff"/>`; }).join('');
+}
+const sm = x => x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x);
+function camera(t) {
+  const p = t % LOOP, dive = p > 12 && p < 24 ? sm(Math.sin(Math.PI * (p - 12) / 12) * 1.15) : 0;
+  cam.pitch = 1.08 - 0.92 * dive + 0.1 * Math.sin(t * 0.21) + (p > 24 ? -0.12 * sm((p - 24) / 4) : 0);
+  cam.scale = 1 + 1.25 * dive; cam.spin = t * 0.09; cam.roll = -0.18 + 0.08 * Math.sin(t * 0.13);
+  return p;
+}
+
+/* ---------------- tooltip ---------------- */
+const tip = $('tip');
+document.addEventListener('pointermove', e => {
+  const el = e.target.closest && e.target.closest('[data-tip]');
+  if (!el) { tip.hidden = true; return; }
+  const [a, b] = el.dataset.tip.split('|');
+  tip.innerHTML = `<b>${esc(a)}</b>${b ? `<span>${esc(b)}</span>` : ''}`; tip.hidden = false;
+  tip.style.left = Math.min(innerWidth - tip.offsetWidth - 8, e.clientX + 14) + 'px';
+  tip.style.top = Math.min(innerHeight - tip.offsetHeight - 8, e.clientY + 14) + 'px';
+});
+
+/* ---------------- 3D tilt on hover (desktop) ---------------- */
+if (!reduce && matchMedia('(hover: hover)').matches) {
+  document.querySelectorAll('.panel.tap').forEach(el => {
+    el.addEventListener('pointermove', e => { const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5; el.style.transform = `perspective(900px) rotateX(${(-y * 6).toFixed(2)}deg) rotateY(${(x * 8).toFixed(2)}deg) translateZ(6px)`; });
+    el.addEventListener('pointerleave', () => { el.style.transform = ''; });
+  });
+}
+
+/* ---------------- detail card: 3D pop-out from the tapped element ---------------- */
+const overlay = $('overlay'), card = $('card');
+let lastSource = null;
+function resolve(k) { let d = D[k], n = 0; while (d && d.alias && n++ < 4) d = D[d.alias]; return d; }
+function buildCard(d) {
+  const val = v => typeof v === 'function' ? v() : v;
+  return `<button class="x" aria-label="Close">×</button>
+    <div class="eyebrow">${esc(d.eb || '')}</div><h3 id="cardTitle">${esc(d.t)}</h3>
+    ${d.lede ? `<p class="lede">${esc(d.lede)}</p>` : ''}
+    ${d.m ? `<div class="metrics">${d.m.map(([v, l]) => `<div class="metric"><b class="num">${esc(val(v))}</b><span>${esc(l)}</span></div>`).join('')}</div>` : ''}
+    ${d.viz ? `<div class="viz">${VIZ[d.viz]()}</div>` : ''}
+    ${d.l ? `<h4>${esc(d.h || 'Details')}</h4><ul>${d.l.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+    ${d.next ? `<div class="next"><b>Next move</b>${esc(d.next)}</div>` : ''}
+    ${d.src ? `<div class="src">${esc(d.src)}</div>` : ''}`;
+}
+function openCard(k, src) {
+  const d = resolve(k); if (!d) return;
+  lastSource = src;
+  card.innerHTML = buildCard(d);
+  card.style.setProperty('--rx', '0deg'); card.style.setProperty('--ry', '0deg');
+  overlay.hidden = false;
+  card.scrollTop = 0;
+  card.querySelector('.x').addEventListener('click', closeCard);
+  card.querySelector('.x').focus({ preventScroll: true });
+  if (reduce || !src) return;
+  const s = src.getBoundingClientRect(), f = card.getBoundingClientRect();
+  const dx = s.left + s.width / 2 - (f.left + f.width / 2), dy = s.top + s.height / 2 - (f.top + f.height / 2);
+  const sc = Math.max(0.15, Math.min(1, s.width / f.width));
+  card.animate([
+    { transform: `translate(${dx}px, ${dy}px) scale(${sc}) rotateY(${dx < 0 ? 38 : -38}deg) rotateX(12deg)`, opacity: 0.2 },
+    { transform: 'translate(0,0) scale(1.03) rotateY(0deg) rotateX(0deg)', opacity: 1, offset: 0.75 },
+    { transform: 'translate(0,0) scale(1) rotateY(0deg) rotateX(0deg)', opacity: 1 }
+  ], { duration: 520, easing: 'cubic-bezier(.2,.8,.2,1)' });
+  overlay.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260 });
+}
+function closeCard() {
+  if (overlay.hidden) return;
+  const done = () => { overlay.hidden = true; if (lastSource && lastSource.focus) lastSource.focus({ preventScroll: true }); };
+  if (reduce || !lastSource) return done();
+  const s = lastSource.getBoundingClientRect(), f = card.getBoundingClientRect();
+  const dx = s.left + s.width / 2 - (f.left + f.width / 2), dy = s.top + s.height / 2 - (f.top + f.height / 2);
+  card.animate([{ transform: 'translate(0,0) scale(1)', opacity: 1 }, { transform: `translate(${dx}px, ${dy}px) scale(0.2) rotateY(${dx < 0 ? 30 : -30}deg)`, opacity: 0 }], { duration: 300, easing: 'ease-in' }).onfinish = done;
+  overlay.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
+}
+document.addEventListener('click', e => {
+  if (e.target === overlay) return closeCard();
+  const el = e.target.closest('[data-d]');
+  if (el && !overlay.contains(el)) { e.preventDefault(); e.stopPropagation(); openCard(el.dataset.d, el); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeCard();
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[role=button][data-d]')) { e.preventDefault(); openCard(e.target.dataset.d, e.target); }
+});
+card.addEventListener('pointermove', e => { if (reduce) return; const r = card.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5; card.style.setProperty('--rx', (-y * 5).toFixed(2) + 'deg'); card.style.setProperty('--ry', (x * 7).toFixed(2) + 'deg'); });
+card.addEventListener('pointerleave', () => { card.style.setProperty('--rx', '0deg'); card.style.setProperty('--ry', '0deg'); });
+
+/* ---------------- loop ---------------- */
+const T0 = performance.now();
+let lastLog = 0, lastClock = 0, stageOn = -1;
+const stageBars = STAGES.map((_, i) => $('st' + i).querySelector('.bar i'));
+function frame(now) {
+  requestAnimationFrame(frame);
+  const t = Math.max(0, (now - T0) / 1000), p = camera(t);
+  if (!overlay.hidden && smallQ.matches) return; // a card fills the phone: pause the core to save battery
+  drawTorus(t); placeTags();
+  const scene = Math.min(2, Math.floor(p / 12)), sp = (p % 12) / 12;
+  renderCode(scene, Math.floor(Math.min(1, sp / 0.82) * FILES[scene][1].length));
+  const st = Math.min(5, Math.floor(p / 6));
+  if (st !== stageOn) { STAGES.forEach((_, i) => $('st' + i).classList.toggle('on', i === st)); stageOn = st; }
+  stageBars.forEach((b, i) => { b.style.width = (i < st ? 100 : i === st ? (p % 6) / 6 * 100 : 0) + '%'; });
+  $('prog').style.width = (p / LOOP * 100).toFixed(1) + '%';
+  if (now - lastLog > 1400) { lastLog = now; pushLog(); }
+  if (now - lastClock > 1000) { lastClock = now; const d = new Date(); $('time').textContent = d.toTimeString().slice(0, 8); $('date').textContent = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase(); }
+}
+for (let i = 0; i < 11; i++) pushLog();
+requestAnimationFrame(frame);
+})();
+</script>

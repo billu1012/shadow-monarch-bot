@@ -1,0 +1,488 @@
+<title>Igris Shadow Core</title>
+<style>
+/* Layout: a fixed 1080x1350 control-room poster (4:5, recording-ready) scaled to fit; a glowing fiber torus at the center, instrument panels around it, editor + log below. Single dark look by choice. */
+:root {
+  --void: #0b090d;
+  --panel: #141017;
+  --panel-2: #1a151e;
+  --line: #2b2331;
+  --bone: #f4efe8;
+  --dim: #8f8697;
+  --faint: #5a5161;
+  --violet: #9d6bff;
+  --gold: #e3b45e;
+  --red: #ff6b5e;
+  --sans: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--void); color: var(--bone); font-family: var(--mono); overflow: hidden; }
+.poster { position: absolute; left: 50%; top: 50%; width: 1080px; height: 1350px; transform-origin: 50% 50%;
+  display: grid; grid-template-rows: 58px 62px 640px 58px 352px 96px 44px; gap: 10px; padding: 12px 14px 0; box-sizing: border-box; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; box-sizing: border-box; position: relative; overflow: hidden; min-width: 0; }
+.ttl { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.ttl small { font-size: 10px; color: var(--dim); font-weight: 400; }
+.micro { font-size: 9px; color: var(--faint); letter-spacing: 0.08em; text-transform: uppercase; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* header */
+.head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+.brand { display: flex; align-items: center; gap: 12px; font-family: var(--sans); font-size: 27px; font-weight: 800; letter-spacing: -0.01em; }
+.brand i { width: 34px; height: 34px; border-radius: 7px; background: var(--violet); display: grid; place-items: center; font-style: normal; font-size: 19px; color: var(--void); }
+.brand span { color: var(--gold); font-weight: 600; }
+.eng { text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; }
+.eng div { font-size: 9px; font-weight: 400; color: var(--faint); margin-top: 6px; letter-spacing: 0.1em; }
+.eng b { color: var(--gold); font-weight: 600; }
+.clock { justify-self: end; display: flex; gap: 28px; align-items: center; font-size: 11px; font-weight: 700; }
+.clock .live { color: var(--red); letter-spacing: 0.1em; }
+.clock .live::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--red); margin-right: 7px; vertical-align: 1px; animation: pulse 1.4s infinite; }
+.clock div div { color: var(--faint); font-weight: 400; margin-top: 4px; text-align: right; }
+@keyframes pulse { 50% { opacity: 0.3; } }
+
+/* stage strip */
+.stages { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.stage { padding: 7px 10px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto 1fr; row-gap: 4px; }
+.stage.on { border-color: var(--violet); box-shadow: 0 0 0 1px var(--violet) inset; }
+.stage.gate { border-color: var(--gold); }
+.stage.gate .badge { color: var(--gold); }
+.stage.gate.on { box-shadow: 0 0 0 1px var(--gold) inset; }
+.stage.gate.on .badge { background: var(--gold); color: var(--void); }
+.stage .n { font-size: 11px; font-weight: 700; }
+.stage .n em { font-style: normal; color: var(--faint); font-weight: 400; margin-right: 6px; }
+.badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 3px; background: var(--panel-2); color: var(--dim); letter-spacing: 0.06em; }
+.stage.on .badge { background: var(--violet); color: var(--void); }
+.stage svg { grid-column: 1; height: 22px; width: 100%; }
+.stage .sc { align-self: end; font-size: 11px; color: var(--gold); }
+
+/* middle band */
+.band { display: grid; grid-template-columns: 200px 1fr 200px; gap: 10px; min-height: 0; }
+.col { display: grid; gap: 10px; min-height: 0; }
+.col.l { grid-template-rows: 236px 200px 1fr; }
+.col.r { grid-template-rows: 216px 210px 1fr; }
+.rows { display: grid; gap: 7px; margin-top: 10px; }
+.row { display: grid; grid-template-columns: 1fr 28px 60px; align-items: center; gap: 6px; font-size: 11px; }
+.row b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row b small { display: block; font-size: 8px; color: var(--faint); font-weight: 400; }
+.row .v { text-align: right; color: var(--bone); }
+.row svg { width: 60px; height: 16px; }
+.curve { position: absolute; inset: 34px 12px 26px; }
+.foot { position: absolute; left: 12px; right: 12px; bottom: 8px; font-size: 9px; color: var(--dim); text-align: center; }
+.big { font-size: 30px; font-weight: 700; font-family: var(--sans); }
+.bars { position: absolute; left: 12px; right: 12px; bottom: 12px; height: 92px; display: flex; align-items: flex-end; gap: 2px; }
+.bars i { flex: 1; background: #6c4aa8; border-radius: 1px 1px 0 0; transition: background 0.3s; }
+.bars i.hot { background: var(--bone); }
+.grid7 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-top: 12px; }
+.grid7 i { aspect-ratio: 1; border-radius: 2px; background: var(--panel-2); transition: background 0.5s; }
+.hand { display: grid; gap: 9px; margin-top: 12px; }
+.hand div { display: grid; grid-template-columns: 1fr 22px; font-size: 9.5px; font-weight: 700; row-gap: 4px; }
+.hand div span { color: var(--dim); text-align: right; font-weight: 400; }
+.hand div u { grid-column: 1 / -1; height: 3px; background: var(--panel-2); text-decoration: none; position: relative; }
+.hand div u::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w); background: var(--violet); transition: width 0.8s; }
+.hand div:nth-child(2) u::after { background: var(--bone); }
+.gauge { position: absolute; left: 50%; top: 40px; transform: translateX(-50%); }
+.gstats { position: absolute; left: 12px; right: 12px; bottom: 10px; display: grid; grid-template-columns: repeat(3, 1fr); font-size: 12px; font-weight: 700; }
+.gstats div::before { content: attr(data-k); display: block; font-size: 8px; color: var(--faint); font-weight: 400; letter-spacing: 0.08em; margin-bottom: 4px; }
+
+/* core */
+.core { position: relative; border-radius: 6px; overflow: hidden; background: radial-gradient(ellipse at 50% 50%, #1c1424 0%, var(--void) 70%); }
+.core canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.core svg.leads { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.tag { position: absolute; transform: translate(-50%, -50%); background: rgba(10, 8, 12, 0.88); border: 1px solid #3a3042; color: var(--bone);
+  font-size: 10px; font-weight: 600; padding: 3px 7px; border-radius: 3px; white-space: nowrap; transition: opacity 0.2s; }
+.tag::before { content: ""; display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--bone); margin-right: 6px; vertical-align: 1px; }
+.tag.v::before { background: var(--violet); }
+.tag.g::before { background: var(--gold); }
+.box { position: absolute; background: rgba(10, 8, 12, 0.9); border: 1px solid #4a3d55; border-radius: 4px; padding: 7px 10px; width: 160px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; }
+.box div { font-size: 8px; color: var(--dim); font-weight: 400; margin-top: 5px; display: flex; justify-content: space-between; align-items: center; }
+.box svg { width: 26px; height: 12px; }
+.corelabel { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 9px; letter-spacing: 0.2em; color: rgba(244, 239, 232, 0.4); pointer-events: none; }
+
+/* kpi row */
+.kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.kpi { display: grid; grid-template-columns: auto 1fr; align-items: end; padding: 6px 12px; }
+.kpi .micro { grid-column: 1 / -1; }
+.kpi .val { font-size: 19px; font-weight: 700; font-family: var(--sans); }
+.kpi svg { height: 20px; width: 100%; margin-left: 10px; }
+.kpi.red .val { color: var(--red); }
+
+/* editor + log */
+.lower { display: grid; grid-template-columns: 1fr 400px; gap: 10px; min-height: 0; }
+.tabs { display: flex; gap: 18px; font-size: 11px; color: var(--dim); align-items: center; }
+.tabs b { color: var(--bone); background: var(--panel-2); padding: 4px 9px; border-radius: 3px; font-weight: 600; border-bottom: 1px solid var(--violet); }
+.tabs .lv { margin-left: auto; color: var(--red); font-size: 10px; }
+pre.code { margin: 14px 0 0; font-family: var(--mono); font-size: 12.5px; line-height: 1.62; white-space: pre; color: var(--bone); }
+pre.code .ln { display: inline-block; width: 30px; color: var(--faint); }
+pre.code .cur-line { background: rgba(157, 107, 255, 0.12); box-shadow: inset 3px 0 0 var(--violet); display: block; }
+pre.code .c { color: var(--faint); }
+pre.code .s { color: var(--gold); }
+pre.code .k { color: #c9b2ff; }
+pre.code .caret { display: inline-block; width: 7px; height: 14px; background: var(--bone); vertical-align: -2px; animation: pulse 1s steps(1) infinite; }
+.log { display: grid; gap: 0; margin-top: 10px; font-size: 11px; }
+.log div { display: grid; grid-template-columns: 58px 62px 1fr 38px; padding: 3.5px 0; white-space: nowrap; }
+.log div span:first-child { color: var(--faint); }
+.log div span:last-child { text-align: right; color: var(--dim); }
+.log div.ok span:last-child { color: var(--bone); }
+.log div.bad span:last-child { color: var(--red); }
+.log div.new { background: rgba(157, 107, 255, 0.1); }
+.log .a { color: var(--violet); }
+.log .a.g { color: var(--gold); }
+.log .a.w { color: var(--bone); }
+
+/* bottom kpis */
+.bottom { display: grid; grid-template-columns: repeat(6, 1fr); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+.bottom > div { padding: 10px 12px; border-right: 1px solid var(--line); position: relative; }
+.bottom > div:last-child { border-right: 0; }
+.bottom .val { font-size: 25px; font-weight: 700; font-family: var(--sans); margin-top: 8px; }
+.bottom svg { position: absolute; left: 12px; right: 12px; bottom: 10px; height: 14px; width: calc(100% - 24px); }
+.bottom .red { color: var(--red); }
+.blocks { display: flex; gap: 3px; margin-top: 4px; }
+.blocks i { width: 9px; height: 9px; background: var(--panel-2); }
+.blocks i.on { background: var(--bone); }
+.flow { position: absolute; left: 12px; right: 12px; bottom: 10px; height: 46px; display: flex; align-items: flex-end; gap: 2px; }
+.flow i { flex: 1; background: #6c4aa8; }
+.flow i:last-child { background: var(--bone); }
+.footer { display: flex; justify-content: space-between; font-size: 10px; color: var(--faint); padding-top: 4px; position: relative; }
+.footer b { color: var(--bone); }
+.footer::after { content: ""; position: absolute; left: 0; bottom: 6px; height: 2px; width: var(--p, 0%); background: var(--violet); }
+@media (prefers-reduced-motion: reduce) { .clock .live::before, pre.code .caret { animation: none; } }
+</style>
+
+<div class="poster" id="poster">
+  <header class="head">
+    <div class="brand"><i>⚔</i>IGRIS <span>Shadow Core</span></div>
+    <div class="eng">MEMORY RENDER ENGINE<div id="crumbs">SPEC · DESIGN · BUILD · QA · GATE · <b>SHIP</b></div></div>
+    <div class="clock"><span class="live">LIVE</span><div><span id="date">11 OCT 2026</span><div id="time" class="num">00:00:00</div></div></div>
+  </header>
+
+  <section class="stages" id="stages"></section>
+
+  <section class="band">
+    <div class="col l">
+      <div class="panel"><div class="ttl">Projects Loaded <small>6/25</small></div><div class="rows" id="projects"></div></div>
+      <div class="panel"><div class="ttl">Rank Curve <small>E → S</small></div><svg class="curve" id="curve" viewBox="0 0 176 130" preserveAspectRatio="none"></svg><div class="foot num" id="curveFoot">A-RANK · 2,395 / 2,800 XP</div></div>
+      <div class="panel"><div class="ttl">Quest Map <small>26 daily</small></div><div style="margin-top:8px"><span class="big num" id="qdone">0</span> <span class="micro">quests · boot 06:00</span></div><div class="bars" id="qbars"></div></div>
+    </div>
+
+    <div class="core panel" style="padding:0" id="core">
+      <canvas id="torus"></canvas>
+      <svg class="leads" id="leads"></svg>
+      <div class="corelabel">IGRIS CORE</div>
+      <div id="tags"></div>
+      <div class="box" style="left:22px;top:150px">LANE A / DIRECTOR<div>q4 conversation · ai &amp; bi <svg viewBox="0 0 26 12" data-mini></svg></div></div>
+      <div class="box" style="right:22px;top:24px">DRAFTS / LIVE<div>factory board · live <svg viewBox="0 0 26 12" data-mini></svg></div></div>
+      <div class="box" style="right:40px;bottom:30px">SHIP / APP<div>s-rank 0/8 · locked <svg viewBox="0 0 26 12" data-mini></svg></div></div>
+    </div>
+
+    <div class="col r">
+      <div class="panel"><div class="ttl">Build Grid <small>6 wks</small></div><div class="grid7" id="grid"></div></div>
+      <div class="panel"><div class="ttl">Agent Factory <small>15 agents</small></div><div class="hand" id="hand"></div></div>
+      <div class="panel"><div class="ttl">S-Rank Gate</div>
+        <svg class="gauge" width="120" height="100" viewBox="0 0 120 100">
+          <path d="M 18 82 A 48 48 0 1 1 102 82" fill="none" stroke="#2b2331" stroke-width="7" stroke-linecap="round"/>
+          <path d="M 18 82 A 48 48 0 0 1 21 74" fill="none" stroke="#9d6bff" stroke-width="7" stroke-linecap="round"/>
+          <line id="needle" x1="60" y1="60" x2="26" y2="78" stroke="#f4efe8" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="60" cy="60" r="4" fill="#f4efe8"/>
+          <text x="60" y="94" text-anchor="middle" fill="#ff6b5e" font-size="11" font-weight="700" font-family="ui-monospace, Menlo, monospace">LOCKED</text>
+        </svg>
+        <div class="gstats"><div data-k="MET">0</div><div data-k="NEED">8</div><div data-k="OCT 30" id="tminus">T-19</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="kpis">
+    <div class="panel kpi"><span class="micro">Scene</span><span class="val num" id="kScene">1 / 3</span><svg data-spark></svg></div>
+    <div class="panel kpi"><span class="micro">System boot</span><span class="val num">06:00</span><svg data-spark></svg></div>
+    <div class="panel kpi"><span class="micro">Lane</span><span class="val">A · B</span><svg data-spark></svg></div>
+    <div class="panel kpi"><span class="micro">Lifts / wk</span><span class="val num">4–5</span><svg data-spark></svg></div>
+    <div class="panel kpi red"><span class="micro">Play lane</span><span class="val">FROZEN</span><svg data-spark></svg></div>
+  </section>
+
+  <section class="lower">
+    <div class="panel"><div class="tabs" id="tabs"></div><pre class="code" id="code"></pre></div>
+    <div class="panel"><div class="tabs"><b>LIVE LOG</b><span>all</span><span>quests</span><span>handoffs</span><span>ships</span><span class="lv">●</span></div><div class="log" id="log"></div></div>
+  </section>
+
+  <section class="bottom">
+    <div><span class="micro">Drafts written</span><div class="val num" id="bDrafts">0</div><svg data-spark></svg></div>
+    <div><span class="micro">Agents hired</span><div class="val num" id="bHand">15</div><svg data-spark></svg></div>
+    <div><span class="micro">Projects → done</span><div class="val num" id="bShip">80%</div><svg data-spark></svg></div>
+    <div><span class="micro">Chat memory</span><div class="val num red">0</div><svg data-spark></svg></div>
+    <div><span class="micro">Focus</span><div class="val">HIGH</div><div class="blocks" id="blocks"></div></div>
+    <div><span class="micro">Build flow</span><div class="flow" id="flow"></div></div>
+  </section>
+
+  <footer class="footer" id="footer"><span><b>prat</b> · PRAT.EXE</span><span>SIMULATED MIND · MEMORY AS DRAFTS</span><span>IGRIS SHADOW CORE · v3</span></footer>
+</div>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const LOOP = 36;
+let T0 = performance.now();
+
+/* ---------- fit the 1080x1350 poster to the viewport ---------- */
+const poster = $('poster');
+let K = 1;
+function fit() {
+  K = Math.min((innerWidth - 8) / 1080, (innerHeight - 8) / 1350);
+  poster.style.transform = `translate(-50%, -50%) scale(${K})`;
+  sizeCanvas();
+}
+
+/* ---------- sparklines ---------- */
+const walk = (n, s = 0.5) => { let v = 0.5, a = []; for (let i = 0; i < n; i++) { v = Math.max(0.05, Math.min(0.95, v + (Math.random() - 0.5) * s)); a.push(v); } return a; };
+function sparkPath(vals, w, h) { return vals.map((v, i) => `${i ? 'L' : 'M'}${(i / (vals.length - 1) * w).toFixed(1)} ${(h - v * h).toFixed(1)}`).join(' '); }
+function drawSpark(svg, color = '#8f8697', n = 24) {
+  const r = svg.getBoundingClientRect(); const w = r.width / K || 100, h = r.height / K || 20;
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  svg.dataset.v = svg.dataset.v ? JSON.stringify(JSON.parse(svg.dataset.v).slice(1).concat(Math.max(0.05, Math.min(0.95, JSON.parse(svg.dataset.v).slice(-1)[0] + (Math.random() - 0.5) * 0.35)))) : JSON.stringify(walk(n));
+  svg.innerHTML = `<path d="${sparkPath(JSON.parse(svg.dataset.v), w, h)}" fill="none" stroke="${color}" stroke-width="1.3"/>`;
+}
+
+/* ---------- stages: the council pipeline ---------- */
+const STAGES = [['SPEC', 'PM'], ['DESIGN', 'LEAD'], ['BUILD', 'REVIEW'], ['QA', 'E2E'], ['GATE', 'P·C·L'], ['READY', 'PRAT']];
+$('stages').innerHTML = STAGES.map(([a, b], i) => `<div class="panel stage${i === 4 ? ' gate' : ''}" id="st${i}"><span class="n"><em>0${i + 1}</em>${a}</span><span class="badge">${b}</span><svg data-spark></svg><span class="sc num">0.9${i}</span></div>`).join('');
+
+/* ---------- left column ---------- */
+const PROJ = [['the other side', 'ECHO · oct 30'], ['elevate', 'blueprint engine'], ['acq. radar', '358 → 7'], ['shadow monarch', 'pwa · discord'], ['body chronicle', 'protein ring'], ['comps db', 'kml · dealpath']];
+$('projects').innerHTML = PROJ.map(([n, s], i) => `<div class="row"><b>${n}<small>${s}</small></b><span class="v num" id="pv${i}">${40 + i * 13}</span><svg data-spark></svg></div>`).join('');
+
+const QXP = [50, 75, 25, 25, 30, 100, 50, 30, 100, 75, 50, 30, 100, 50, 30, 100, 75, 30, 25, 25, 50, 200, 75, 50, 30, 200];
+$('qbars').innerHTML = QXP.map(x => `<i style="height:${Math.round(x / 200 * 100)}%"></i>`).join('');
+
+/* rank curve: E..S with the dot sitting at A (2,395 of the 2,800 S threshold) */
+(function curve() {
+  const pts = []; for (let i = 0; i <= 40; i++) { const x = i / 40; pts.push([x * 176, 130 - (1 - Math.pow(1 - x, 2.6)) * 118]); }
+  const d = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
+  $('curve').innerHTML = `<path d="${d} L176 130 L0 130 Z" fill="rgba(157,107,255,0.18)"/><path d="${d}" fill="none" stroke="#9d6bff" stroke-width="1.6"/>
+    <line x1="0" y1="130" x2="176" y2="0" stroke="#5a5161" stroke-dasharray="2 3" stroke-width="0.8"/>
+    ${['E', 'D', 'C', 'B', 'A', 'S'].map((r, i) => `<text x="${4 + i * 33}" y="126" fill="#5a5161" font-size="8" font-family="ui-monospace,monospace">${r}</text>`).join('')}
+    <circle id="cdot" r="4" fill="#f4efe8"/>`;
+  window.__curve = pts;
+})();
+
+/* ---------- right column ---------- */
+$('grid').innerHTML = Array.from({ length: 42 }, () => '<i></i>').join('');
+const COUNCIL = ['PRODUCT + ENG · 6', 'DESIGN + RESEARCH · 3', 'GROWTH + LAUNCH · 3', 'OPS + INTEGRITY · 3', 'COUNCIL · 4', 'CEO · PRAT'];
+$('hand').innerHTML = COUNCIL.map((c, i) => `<div><b>${c}</b><span class="num" id="h${i}">0</span><u id="hu${i}"></u></div>`).join('');
+$('blocks').innerHTML = Array.from({ length: 9 }, (_, i) => `<i class="${i < 6 ? 'on' : ''}"></i>`).join('');
+$('flow').innerHTML = Array.from({ length: 34 }, () => `<i style="height:${20 + Math.random() * 80}%"></i>`).join('');
+const daysLeft = Math.max(0, Math.ceil((Date.UTC(2026, 9, 30, 17) - Date.now()) / 864e5));
+$('tminus').textContent = daysLeft ? `T-${daysLeft}` : 'DUE';
+
+/* ---------- code editor: three files, one per scene ---------- */
+const FILES = [
+  ['igris.ts', `// igris.ts · engineering manager of the agent factory
+import { drafts, repo } from '@prat/memory';
+import { factory } from 'agent-factory';    // 15 agents · 4 depts
+
+export const Igris = () => {
+  const prat = rebuild(drafts, repo);        // no chat memory
+  const idea = prat.lanes.B;                 // the other side
+  return factory.ship(idea, {
+    gates: ['privacy', 'cost', 'launch'],    // any block stops it
+    approve: prat,                           // ceo: push · deploy · spend
+  });
+};`],
+  ['handoff.md', `# Igris → Chakra · handoff
+Brother — read this start-of-session.
+
+- shipped: shadow_monarch_bot.py · bridge schema
+- oracle ARM: 4 core · 24GB · verified
+- protein floor: 150g  // he hit 102. again.
+- the other side: ECHO · deadline oct 30
+- frozen: play lane until jan 1, 2027
+
+"The shadows obey discipline, not effort."`],
+  ['gate.swift', `// gate.swift · S-RANK · xp alone cannot open it
+struct SRankGate: View {
+  @State var met = 0       // of 8
+  var body: some View {
+    FocusQuest(title: "ship", minutes: 30)
+      .notify(.systemAlert)
+      .onComplete { met += 1; xp += 200 }
+  }
+}
+
+// ship the app.`]
+];
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function hl(line) {
+  let out = '', i = 0;
+  const ci = line.search(/\/\/|^#/);
+  const body = ci >= 0 ? line.slice(0, ci) : line, com = ci >= 0 ? line.slice(ci) : '';
+  out = esc(body).replace(/(&quot;|"|')(.*?)\1/g, m => `<span class="s">${m}</span>`)
+    .replace(/\b(import|from|export|const|return|struct|var|some|let)\b/g, '<span class="k">$1</span>');
+  if (com) out += `<span class="c">${esc(com)}</span>`;
+  return out;
+}
+let tabIdx = -1;
+function renderCode(fi, chars) {
+  if (fi !== tabIdx) { tabIdx = fi; $('tabs').innerHTML = FILES.map((f, i) => i === fi ? `<b>${f[0]}</b>` : `<span>${f[0]}</span>`).join('') + '<span class="lv">● LIVE</span>'; }
+  const src = FILES[fi][1].slice(0, chars), lines = src.split('\n'), last = lines.length - 1;
+  $('code').innerHTML = lines.map((l, i) => {
+    const html = `<span class="ln">${String(i + 1).padStart(2, '0')}</span>${hl(l)}${i === last ? '<span class="caret"></span>' : ''}`;
+    return i === last ? `<span class="cur-line">${html}</span>` : html + '\n';
+  }).join('');
+}
+
+/* ---------- live log: the journey, from the drafts ---------- */
+const LOG = [
+  ['04.03', 'quest', 'B → A-RANK · +1,345 xp', '✓', 'ok', 'w'], ['04.03', 'penalty', 'shadow raid skipped', '-300', 'bad', 'g'],
+  ['04.16', 'igris', 'build progress · 30m pings', '✓', 'ok', ''], ['05.07', 'body', 'protein 102g / 150g', '-48g', 'bad', 'g'],
+  ['05.08', 'chakra', 'chakra link LIVE', '✓', 'ok', ''], ['05.09', 'igris', 'oracle ARM verified', '✓', 'ok', ''],
+  ['05.09', 'igris', 'bridge schema accepted', '✓', 'ok', ''], ['05.15', 'chakra', 'ASCENDED dashboard', 'ship', 'ok', ''],
+  ['05.15', 'chakra', 'pipeline · 12 programs', '$0', '', ''], ['06.12', 'prat', 'OPERATION: ASCENSION', '10d', '', 'w'],
+  ['06.20', 'igris', 'crown & rubble bundle', '✓', 'ok', ''], ['08.--', 'woodmont', 'website rebuild w/ CEO', 'ship', 'ok', 'g'],
+  ['09.28', 'igris', 'deadline verified · oct 30', '✓', 'ok', ''], ['10.02', 'igris', 'relay → chatgpt · ECHO', '✓', 'ok', ''],
+  ['10.04', 'igris', 'inside igris · v1', '✓', 'ok', ''], ['10.11', 'factory', '15 agents · 4 depts', 'hire', 'ok', 'g'],
+  ['10.11', 'factory', 'board tests 5/5', '✓', 'ok', 'g'], ['10.11', 'factory', 'launch-review → ECHO', 'run', '', 'g'], ['10.11', 'gate', 'S-RANK 0/8', 'lock', 'bad', 'w']
+];
+let logN = 0;
+function pushLog() {
+  const rows = []; const n = 13;
+  for (let i = Math.max(0, logN - n + 1); i <= logN; i++) rows.push([LOG[i % LOG.length], i === logN]);
+  $('log').innerHTML = rows.map(([[d, a, m, r, cls, ac], isNew]) => `<div class="${cls}${isNew ? ' new' : ''}"><span>[${d}]</span><span class="a ${ac}">${a}</span><span>${esc(m)}</span><span>${r}</span></div>`).join('');
+  logN++;
+}
+
+/* ---------- torus: fiber strands, additive light ---------- */
+const cv = $('torus'), g0 = cv.getContext('2d'); const off = document.createElement('canvas'); const g = off.getContext('2d');
+let CW = 640, CH = 640, PR = 1;
+function sizeCanvas() {
+  const r = $('core'); CW = r.clientWidth; CH = r.clientHeight;
+  PR = Math.min(2, (devicePixelRatio || 1) * K);
+  cv.width = off.width = Math.round(CW * PR); cv.height = off.height = Math.round(CH * PR);
+}
+const N = reduce ? 6000 : 13000;
+const SU = new Float32Array(N), SV = new Float32Array(N), SD = new Float32Array(N), SW = new Float32Array(N), ST = new Float32Array(N), SR = new Float32Array(N);
+for (let i = 0; i < N; i++) { SU[i] = Math.random() * 6.2832; SV[i] = Math.random() * 6.2832; SD[i] = 0.08 + Math.random() * 0.34; SW[i] = Math.random(); ST[i] = 0.02 + (Math.random() - 0.5) * 0.05; SR[i] = 0.9 + Math.pow(Math.random(), 2) * 0.28; }
+const R0 = 1, r0 = 0.46;
+let cam = { pitch: 1.05, spin: 0, scale: 1, roll: 0 };
+function P(u, v, rr = 1) {
+  const cr = r0 * rr, x = (R0 + cr * Math.cos(v)) * Math.cos(u), y = (R0 + cr * Math.cos(v)) * Math.sin(u), z = cr * Math.sin(v);
+  const cs = Math.cos(cam.spin), ss = Math.sin(cam.spin);
+  const x1 = x * cs - y * ss, y1 = x * ss + y * cs;
+  const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+  const y2 = y1 * cp - z * sp, z2 = y1 * sp + z * cp;
+  const cr2 = Math.cos(cam.roll), sr2 = Math.sin(cam.roll);
+  const x3 = x1 * cr2 - y2 * sr2, y3 = x1 * sr2 + y2 * cr2;
+  const D = 3.4, f = Math.min(CW, CH) * 0.95 * cam.scale, zc = z2 + D;
+  return [CW / 2 + x3 * f / zc, CH * 0.56 + y3 * f / zc, z2];
+}
+const BUCK = 10, paths = Array.from({ length: BUCK * 2 }, () => []);
+const L = [0.45, -0.55, -0.7]; { const m = Math.hypot(...L); L[0] /= m; L[1] /= m; L[2] /= m; }
+function drawTorus(t) {
+  g.setTransform(PR, 0, 0, PR, 0, 0);
+  g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, CW, CH);
+  const gr = g.createRadialGradient(CW / 2, CH / 2, 0, CW / 2, CH / 2, Math.min(CW, CH) * 0.62 * cam.scale);
+  gr.addColorStop(0, 'rgba(70,40,110,0.0)'); gr.addColorStop(0.45, 'rgba(90,55,150,0.28)'); gr.addColorStop(1, 'rgba(20,12,30,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, CW, CH);
+  for (const p of paths) p.length = 0;
+  const flow = t * 0.22;
+  const cs = Math.cos(cam.spin), ss = Math.sin(cam.spin), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+  for (let i = 0; i < N; i++) {
+    const u = SU[i] + ST[i] * Math.sin(t * 0.3 + i), v = SV[i] + flow, d = SD[i];
+    const a = P(u, v, SR[i]), b = P(u + ST[i], v + d, SR[i]);
+    // normal for light
+    const nx0 = Math.cos(v) * Math.cos(u), ny0 = Math.cos(v) * Math.sin(u), nz0 = Math.sin(v);
+    const nx1 = nx0 * cs - ny0 * ss, ny1 = nx0 * ss + ny0 * cs;
+    const ny2 = ny1 * cp - nz0 * sp, nz2 = ny1 * sp + nz0 * cp;
+    const lam = Math.max(0, nx1 * L[0] + ny2 * L[1] + nz2 * L[2]);
+    const rim = Math.pow(1 - Math.abs(nz2), 3) * 0.5;
+    let br = 0.16 + lam * lam * 1.25 + rim;
+    br *= 0.6 + 0.4 * (1 - (a[2] + 1.5) / 3);
+    const k = Math.min(BUCK - 1, Math.floor(br * BUCK));
+    if (k <= 0) continue;
+    paths[(SW[i] < 0.14 ? BUCK : 0) + k].push(a[0], a[1], b[0], b[1]);
+  }
+  g.globalCompositeOperation = 'lighter'; g.lineWidth = 0.75; g.lineCap = 'round';
+  for (let c = 0; c < 2; c++) for (let k = 1; k < BUCK; k++) {
+    const arr = paths[c * BUCK + k]; if (!arr.length) continue;
+    const al = Math.pow(k / BUCK, 1.4) * 0.75;
+    g.strokeStyle = c ? `rgba(245,195,120,${al})` : `rgba(${170 + k * 9},${120 + k * 13},255,${al})`;
+    g.beginPath();
+    for (let j = 0; j < arr.length; j += 4) { g.moveTo(arr[j], arr[j + 1]); g.lineTo(arr[j + 2], arr[j + 3]); }
+    g.stroke();
+  }
+  // hot spot
+  const hp = P(-0.6 + cam.spin * 0, 0.6);
+  const hs = g.createRadialGradient(hp[0], hp[1], 0, hp[0], hp[1], 90 * cam.scale);
+  hs.addColorStop(0, 'rgba(255,245,235,0.35)'); hs.addColorStop(1, 'rgba(255,245,235,0)');
+  g.fillStyle = hs; g.fillRect(0, 0, CW, CH);
+  g.globalCompositeOperation = 'source-over';
+  g0.setTransform(1, 0, 0, 1, 0, 0); g0.clearRect(0, 0, cv.width, cv.height);
+  g0.globalCompositeOperation = 'lighter';
+  if (!reduce) { g0.filter = `blur(${Math.round(9 * PR)}px)`; g0.globalAlpha = 0.9; g0.drawImage(off, 0, 0); g0.filter = 'none'; g0.globalAlpha = 1; }
+  g0.drawImage(off, 0, 0);
+  g0.globalCompositeOperation = 'source-over';
+}
+
+/* ---------- tags anchored to the torus ---------- */
+const TAGS = [['chakra · picks', 0.4, 1.2, 'v'], ['factory · 15', 1.5, 0.3, 'g'], ['codex · build', 2.6, 1.0, ''], ['launch gate', 3.4, -0.6, 'v'],
+  [`ECHO · T-${daysLeft}d`, 4.2, 0.9, 'g'], ['A-RANK · 2,395', 5.0, 0.2, ''], ['358 → 7', 5.8, 1.4, 'g'], ['150g floor', 0.9, 2.6, ''], ['lift 4–5x / wk', 3.9, 2.2, ''], ['gate 0/8', 2.1, 2.9, 'v']];
+$('tags').innerHTML = TAGS.map(([t, , , c], i) => `<div class="tag ${c}" id="tg${i}">${esc(t)}</div>`).join('');
+const LEADS = [[0, 182, 5], [1, null, 1], [2, null, 9]]; // box -> tag anchor
+function placeTags() {
+  const pos = [];
+  TAGS.forEach(([, u, v], i) => {
+    const p = P(u + cam.spin * 0, v, 1.04); pos.push(p);
+    const el = $('tg' + i); const off = p[0] < -40 || p[0] > CW + 40 || p[1] < -20 || p[1] > CH + 20;
+    el.style.left = p[0] + 'px'; el.style.top = p[1] + 'px';
+    el.style.opacity = off ? 0 : p[2] > 0.25 ? 0.35 : 1;
+  });
+  const boxes = [...document.querySelectorAll('.box')].map(b => [b.offsetLeft + b.offsetWidth / 2, b.offsetTop + b.offsetHeight / 2]);
+  const pairs = [[0, 5], [1, 1], [2, 9]];
+  $('leads').innerHTML = pairs.map(([bi, ti]) => { const p = pos[ti]; return `<line x1="${boxes[bi][0]}" y1="${boxes[bi][1]}" x2="${p[0]}" y2="${p[1]}" stroke="rgba(244,239,232,0.35)" stroke-width="1"/><circle cx="${p[0]}" cy="${p[1]}" r="2.5" fill="#f4efe8"/>`; }).join('');
+}
+
+/* ---------- camera choreography (36s loop, 3 scenes) ---------- */
+const sm = x => x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x);
+function camera(t) {
+  const p = t % LOOP;
+  const dive = p > 12 && p < 24 ? sm(Math.sin(Math.PI * (p - 12) / 12) * 1.15) : 0;
+  cam.pitch = 1.08 - 0.92 * dive + 0.1 * Math.sin(t * 0.21) + (p > 24 ? -0.12 * sm((p - 24) / 4) : 0);
+  cam.scale = 1 + 1.25 * dive;
+  cam.spin = t * 0.09;
+  cam.roll = -0.18 + 0.08 * Math.sin(t * 0.13);
+  return p;
+}
+
+/* ---------- loop ---------- */
+let lastSlow = 0, lastLog = 0, lastP = -1;
+const sparks = [...document.querySelectorAll('svg[data-spark], .row svg, svg[data-mini]')];
+function slow(t, p) {
+  sparks.forEach(s => drawSpark(s, s.closest('.stage.on') ? '#9d6bff' : s.closest('.kpi.red') ? '#ff6b5e' : '#8f8697'));
+  PROJ.forEach((_, i) => { const el = $('pv' + i); el.textContent = Math.max(1, +el.textContent + Math.round((Math.random() - 0.3) * 3)); });
+  [...$('grid').children].forEach((c, i) => { const r = Math.random(); c.style.background = r > 0.82 ? '#f4efe8' : r > 0.6 ? '#9d6bff' : r > 0.38 ? '#4a3270' : '#1a151e'; });
+  COUNCIL.forEach((_, i) => { const v = Math.round([88, 52, 61, 74, 45, 30][i] + (Math.random() - 0.5) * 10); $('h' + i).textContent = v; $('hu' + i).style.setProperty('--w', v + '%'); });
+  const fl = $('flow'); fl.appendChild(fl.firstElementChild); fl.lastElementChild.style.height = (20 + Math.random() * 80) + '%';
+}
+function frame(now) {
+  requestAnimationFrame(frame);
+  const t = Math.max(0, (now - T0) / 1000), p = camera(t);
+  drawTorus(t); placeTags();
+  const scene = Math.min(2, Math.floor(p / 12)), sp = (p % 12) / 12;
+  $('kScene').textContent = `${scene + 1} / 3`;
+  renderCode(scene, Math.floor(Math.min(1, sp / 0.82) * FILES[scene][1].length));
+  const st = Math.min(5, Math.floor(p / 6));
+  STAGES.forEach((_, i) => $('st' + i).classList.toggle('on', i === st));
+  const qi = Math.floor(p / LOOP * 26);
+  if (qi !== lastP) { [...$('qbars').children].forEach((b, i) => b.classList.toggle('hot', i === qi)); $('qdone').textContent = qi + 1; lastP = qi; }
+  const cp = window.__curve[Math.round(28 + 2 * Math.sin(t * 0.8))]; const dot = $('cdot'); dot.setAttribute('cx', cp[0]); dot.setAttribute('cy', cp[1]);
+  $('needle').setAttribute('x2', 26 + Math.sin(t * 4) * 1.2);
+  $('bDrafts').textContent = Math.round(80 + p * 1.5);
+    $('bShip').textContent = Math.min(100, Math.round(80 + 20 * sm((p - 24) / 10))) + '%';
+  $('footer').style.setProperty('--p', (p / LOOP * 100).toFixed(1) + '%');
+  if (now - lastSlow > 650) { lastSlow = now; slow(t, p); }
+  if (now - lastLog > 1100) { lastLog = now; pushLog(); }
+  const d = new Date(); $('time').textContent = d.toTimeString().slice(0, 8);
+  $('date').textContent = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+}
+fit(); addEventListener('resize', fit);
+for (let i = 0; i < 12; i++) pushLog();
+requestAnimationFrame(frame);
+})();
+</script>
