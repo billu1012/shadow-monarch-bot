@@ -44,6 +44,10 @@ body { background: var(--void); color: var(--bone); font-family: var(--mono); ov
 .stages { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
 .stage { padding: 7px 10px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto 1fr; row-gap: 4px; }
 .stage.on { border-color: var(--violet); box-shadow: 0 0 0 1px var(--violet) inset; }
+.stage.gate { border-color: var(--gold); }
+.stage.gate .badge { color: var(--gold); }
+.stage.gate.on { box-shadow: 0 0 0 1px var(--gold) inset; }
+.stage.gate.on .badge { background: var(--gold); color: var(--void); }
 .stage .n { font-size: 11px; font-weight: 700; }
 .stage .n em { font-style: normal; color: var(--faint); font-weight: 400; margin-right: 6px; }
 .badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 3px; background: var(--panel-2); color: var(--dim); letter-spacing: 0.06em; }
@@ -71,7 +75,7 @@ body { background: var(--void); color: var(--bone); font-family: var(--mono); ov
 .grid7 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-top: 12px; }
 .grid7 i { aspect-ratio: 1; border-radius: 2px; background: var(--panel-2); transition: background 0.5s; }
 .hand { display: grid; gap: 9px; margin-top: 12px; }
-.hand div { display: grid; grid-template-columns: 1fr 22px; font-size: 10px; font-weight: 700; row-gap: 4px; }
+.hand div { display: grid; grid-template-columns: 1fr 22px; font-size: 9.5px; font-weight: 700; row-gap: 4px; }
 .hand div span { color: var(--dim); text-align: right; font-weight: 400; }
 .hand div u { grid-column: 1 / -1; height: 3px; background: var(--panel-2); text-decoration: none; position: relative; }
 .hand div u::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w); background: var(--violet); transition: width 0.8s; }
@@ -147,7 +151,7 @@ pre.code .caret { display: inline-block; width: 7px; height: 14px; background: v
 <div class="poster" id="poster">
   <header class="head">
     <div class="brand"><i>⚔</i>IGRIS <span>Shadow Core</span></div>
-    <div class="eng">MEMORY RENDER ENGINE<div id="crumbs">PICK · SPEC · BUILD · CHECK · <b>SHIP</b></div></div>
+    <div class="eng">MEMORY RENDER ENGINE<div id="crumbs">SPEC · DESIGN · BUILD · QA · GATE · <b>SHIP</b></div></div>
     <div class="clock"><span class="live">LIVE</span><div><span id="date">11 OCT 2026</span><div id="time" class="num">00:00:00</div></div></div>
   </header>
 
@@ -166,13 +170,13 @@ pre.code .caret { display: inline-block; width: 7px; height: 14px; background: v
       <div class="corelabel">IGRIS CORE</div>
       <div id="tags"></div>
       <div class="box" style="left:22px;top:150px">LANE A / DIRECTOR<div>q4 conversation · ai &amp; bi <svg viewBox="0 0 26 12" data-mini></svg></div></div>
-      <div class="box" style="right:22px;top:24px">DRAFTS / LIVE<div>handoffs · relay ✓ <svg viewBox="0 0 26 12" data-mini></svg></div></div>
+      <div class="box" style="right:22px;top:24px">DRAFTS / LIVE<div>factory board · live <svg viewBox="0 0 26 12" data-mini></svg></div></div>
       <div class="box" style="right:40px;bottom:30px">SHIP / APP<div>s-rank 0/8 · locked <svg viewBox="0 0 26 12" data-mini></svg></div></div>
     </div>
 
     <div class="col r">
       <div class="panel"><div class="ttl">Build Grid <small>6 wks</small></div><div class="grid7" id="grid"></div></div>
-      <div class="panel"><div class="ttl">Council Handoffs <small>24H</small></div><div class="hand" id="hand"></div></div>
+      <div class="panel"><div class="ttl">Agent Factory <small>15 agents</small></div><div class="hand" id="hand"></div></div>
       <div class="panel"><div class="ttl">S-Rank Gate</div>
         <svg class="gauge" width="120" height="100" viewBox="0 0 120 100">
           <path d="M 18 82 A 48 48 0 1 1 102 82" fill="none" stroke="#2b2331" stroke-width="7" stroke-linecap="round"/>
@@ -201,7 +205,7 @@ pre.code .caret { display: inline-block; width: 7px; height: 14px; background: v
 
   <section class="bottom">
     <div><span class="micro">Drafts written</span><div class="val num" id="bDrafts">0</div><svg data-spark></svg></div>
-    <div><span class="micro">Handoffs</span><div class="val num" id="bHand">0</div><svg data-spark></svg></div>
+    <div><span class="micro">Agents hired</span><div class="val num" id="bHand">15</div><svg data-spark></svg></div>
     <div><span class="micro">Projects → done</span><div class="val num" id="bShip">80%</div><svg data-spark></svg></div>
     <div><span class="micro">Chat memory</span><div class="val num red">0</div><svg data-spark></svg></div>
     <div><span class="micro">Focus</span><div class="val">HIGH</div><div class="blocks" id="blocks"></div></div>
@@ -238,8 +242,8 @@ function drawSpark(svg, color = '#8f8697', n = 24) {
 }
 
 /* ---------- stages: the council pipeline ---------- */
-const STAGES = [['CHAKRA', 'PICK'], ['IGRIS', 'SPEC'], ['CODEX', 'BUILD'], ['IGRIS', 'CHECK'], ['PRAT', 'SHIP'], ['BERU', 'SCOUT']];
-$('stages').innerHTML = STAGES.map(([a, b], i) => `<div class="panel stage" id="st${i}"><span class="n"><em>0${i + 1}</em>${a}</span><span class="badge">${b}</span><svg data-spark></svg><span class="sc num">0.9${i}</span></div>`).join('');
+const STAGES = [['SPEC', 'PM'], ['DESIGN', 'LEAD'], ['BUILD', 'REVIEW'], ['QA', 'E2E'], ['GATE', 'P·C·L'], ['READY', 'PRAT']];
+$('stages').innerHTML = STAGES.map(([a, b], i) => `<div class="panel stage${i === 4 ? ' gate' : ''}" id="st${i}"><span class="n"><em>0${i + 1}</em>${a}</span><span class="badge">${b}</span><svg data-spark></svg><span class="sc num">0.9${i}</span></div>`).join('');
 
 /* ---------- left column ---------- */
 const PROJ = [['the other side', 'ECHO · oct 30'], ['elevate', 'blueprint engine'], ['acq. radar', '358 → 7'], ['shadow monarch', 'pwa · discord'], ['body chronicle', 'protein ring'], ['comps db', 'kml · dealpath']];
@@ -261,7 +265,7 @@ $('qbars').innerHTML = QXP.map(x => `<i style="height:${Math.round(x / 200 * 100
 
 /* ---------- right column ---------- */
 $('grid').innerHTML = Array.from({ length: 42 }, () => '<i></i>').join('');
-const COUNCIL = ['CHAKRA', 'IGRIS', 'CODEX', 'BERU', 'GEMINI', 'PRAT'];
+const COUNCIL = ['PRODUCT + ENG · 6', 'DESIGN + RESEARCH · 3', 'GROWTH + LAUNCH · 3', 'OPS + INTEGRITY · 3', 'COUNCIL · 4', 'CEO · PRAT'];
 $('hand').innerHTML = COUNCIL.map((c, i) => `<div><b>${c}</b><span class="num" id="h${i}">0</span><u id="hu${i}"></u></div>`).join('');
 $('blocks').innerHTML = Array.from({ length: 9 }, (_, i) => `<i class="${i < 6 ? 'on' : ''}"></i>`).join('');
 $('flow').innerHTML = Array.from({ length: 34 }, () => `<i style="height:${20 + Math.random() * 80}%"></i>`).join('');
@@ -270,18 +274,17 @@ $('tminus').textContent = daysLeft ? `T-${daysLeft}` : 'DUE';
 
 /* ---------- code editor: three files, one per scene ---------- */
 const FILES = [
-  ['igris.ts', `// igris.ts · shadow knight · built from what prat leaves behind
+  ['igris.ts', `// igris.ts · engineering manager of the agent factory
 import { drafts, repo } from '@prat/memory';
-import { Chakra, Codex, Beru } from './council';
+import { factory } from 'agent-factory';    // 15 agents · 4 depts
 
 export const Igris = () => {
-  const prat = rebuild(drafts, repo);    // no chat memory
-  const lane = prat.lanes.A;             // director case · Q4
-  const xp = useQuestLog('2026-04-03');  // 2,395 · A-RANK
-  return (
-    <Council pick={Chakra} spec={Igris} build={Codex}
-             check={Igris} ship={prat} />
-  );
+  const prat = rebuild(drafts, repo);        // no chat memory
+  const idea = prat.lanes.B;                 // the other side
+  return factory.ship(idea, {
+    gates: ['privacy', 'cost', 'launch'],    // any block stops it
+    approve: prat,                           // ceo: push · deploy · spend
+  });
 };`],
   ['handoff.md', `# Igris → Chakra · handoff
 Brother — read this start-of-session.
@@ -334,7 +337,8 @@ const LOG = [
   ['05.15', 'chakra', 'pipeline · 12 programs', '$0', '', ''], ['06.12', 'prat', 'OPERATION: ASCENSION', '10d', '', 'w'],
   ['06.20', 'igris', 'crown & rubble bundle', '✓', 'ok', ''], ['08.--', 'woodmont', 'website rebuild w/ CEO', 'ship', 'ok', 'g'],
   ['09.28', 'igris', 'deadline verified · oct 30', '✓', 'ok', ''], ['10.02', 'igris', 'relay → chatgpt · ECHO', '✓', 'ok', ''],
-  ['10.04', 'igris', 'inside igris · v1', '✓', 'ok', ''], ['10.11', 'gate', 'S-RANK 0/8', 'lock', 'bad', 'w']
+  ['10.04', 'igris', 'inside igris · v1', '✓', 'ok', ''], ['10.11', 'factory', '15 agents · 4 depts', 'hire', 'ok', 'g'],
+  ['10.11', 'factory', 'board tests 5/5', '✓', 'ok', 'g'], ['10.11', 'factory', 'launch-review → ECHO', 'run', '', 'g'], ['10.11', 'gate', 'S-RANK 0/8', 'lock', 'bad', 'w']
 ];
 let logN = 0;
 function pushLog() {
@@ -417,7 +421,7 @@ function drawTorus(t) {
 }
 
 /* ---------- tags anchored to the torus ---------- */
-const TAGS = [['chakra · picks', 0.4, 1.2, 'v'], ['spec ✓', 1.5, 0.3, ''], ['codex · build', 2.6, 1.0, ''], ['triple-check', 3.4, -0.6, 'v'],
+const TAGS = [['chakra · picks', 0.4, 1.2, 'v'], ['factory · 15', 1.5, 0.3, 'g'], ['codex · build', 2.6, 1.0, ''], ['launch gate', 3.4, -0.6, 'v'],
   [`ECHO · T-${daysLeft}d`, 4.2, 0.9, 'g'], ['A-RANK · 2,395', 5.0, 0.2, ''], ['358 → 7', 5.8, 1.4, 'g'], ['150g floor', 0.9, 2.6, ''], ['lift 4–5x / wk', 3.9, 2.2, ''], ['gate 0/8', 2.1, 2.9, 'v']];
 $('tags').innerHTML = TAGS.map(([t, , , c], i) => `<div class="tag ${c}" id="tg${i}">${esc(t)}</div>`).join('');
 const LEADS = [[0, 182, 5], [1, null, 1], [2, null, 9]]; // box -> tag anchor
@@ -453,7 +457,7 @@ function slow(t, p) {
   sparks.forEach(s => drawSpark(s, s.closest('.stage.on') ? '#9d6bff' : s.closest('.kpi.red') ? '#ff6b5e' : '#8f8697'));
   PROJ.forEach((_, i) => { const el = $('pv' + i); el.textContent = Math.max(1, +el.textContent + Math.round((Math.random() - 0.3) * 3)); });
   [...$('grid').children].forEach((c, i) => { const r = Math.random(); c.style.background = r > 0.82 ? '#f4efe8' : r > 0.6 ? '#9d6bff' : r > 0.38 ? '#4a3270' : '#1a151e'; });
-  COUNCIL.forEach((_, i) => { const v = Math.round([82, 96, 64, 31, 22, 58][i] + (Math.random() - 0.5) * 10); $('h' + i).textContent = v; $('hu' + i).style.setProperty('--w', v + '%'); });
+  COUNCIL.forEach((_, i) => { const v = Math.round([88, 52, 61, 74, 45, 30][i] + (Math.random() - 0.5) * 10); $('h' + i).textContent = v; $('hu' + i).style.setProperty('--w', v + '%'); });
   const fl = $('flow'); fl.appendChild(fl.firstElementChild); fl.lastElementChild.style.height = (20 + Math.random() * 80) + '%';
 }
 function frame(now) {
@@ -470,8 +474,7 @@ function frame(now) {
   const cp = window.__curve[Math.round(28 + 2 * Math.sin(t * 0.8))]; const dot = $('cdot'); dot.setAttribute('cx', cp[0]); dot.setAttribute('cy', cp[1]);
   $('needle').setAttribute('x2', 26 + Math.sin(t * 4) * 1.2);
   $('bDrafts').textContent = Math.round(80 + p * 1.5);
-  $('bHand').textContent = Math.round(6 + p / 6);
-  $('bShip').textContent = Math.min(100, Math.round(80 + 20 * sm((p - 24) / 10))) + '%';
+    $('bShip').textContent = Math.min(100, Math.round(80 + 20 * sm((p - 24) / 10))) + '%';
   $('footer').style.setProperty('--p', (p / LOOP * 100).toFixed(1) + '%');
   if (now - lastSlow > 650) { lastSlow = now; slow(t, p); }
   if (now - lastLog > 1100) { lastLog = now; pushLog(); }
