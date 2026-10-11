@@ -246,7 +246,7 @@ async function load() {
     if (!json.candles?.length) throw new Error("No data returned for this symbol/interval");
     state.data = json;
     banner(json.demo
-      ? "DEMO DATA — no API key configured. Set TWELVE_DATA_API_KEY or ALPHA_VANTAGE_API_KEY on the server for real prices."
+      ? "DEMO DATA — the server has MARKET_DATA_PROVIDERS=demo. Remove it (or set yahoo) for real prices."
       : "");
     renderQuote();
     drawChart();

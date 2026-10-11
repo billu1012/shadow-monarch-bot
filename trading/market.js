@@ -1,15 +1,20 @@
-// Market data layer: normalizes Twelve Data and Alpha Vantage into one candle
-// shape, with an in-memory cache so the free-tier quotas last.
+// Market data layer: normalizes Yahoo Finance, Twelve Data and Alpha Vantage
+// into one candle shape, with an in-memory cache so free quotas last.
 //
+//   Yahoo Finance — no key (unofficial endpoint; can rate-limit or change)
 //   Twelve Data   — TWELVE_DATA_API_KEY   (free: 800 req/day, 8/min)
 //   Alpha Vantage — ALPHA_VANTAGE_API_KEY (free: 25 req/day)
 //
-// Order: Twelve Data first (bigger quota), Alpha Vantage as fallback. With no
-// keys set at all, a clearly-labelled demo feed is served so the dashboard
-// still renders. Demo data is never used to cover for a failing real provider.
+// Tried in that order; keyed providers are skipped when their key is unset.
+// MARKET_DATA_PROVIDERS (comma list, e.g. "twelvedata,yahoo") overrides the
+// order; "demo" serves a clearly-labelled fake feed for offline work. Demo data
+// is never used to cover for a failing real provider.
 
 export const INTERVALS = ["5min", "15min", "60min", "daily", "weekly"];
 
+const YAHOO_INTERVAL = {
+  "5min": ["5m", "5d"], "15min": ["15m", "1mo"], "60min": ["60m", "3mo"], daily: ["1d", "2y"], weekly: ["1wk", "10y"],
+};
 const TD_INTERVAL = { "5min": "5min", "15min": "15min", "60min": "1h", daily: "1day", weekly: "1week" };
 const CACHE_TTL_MS = { "5min": 60e3, "15min": 3 * 60e3, "60min": 10 * 60e3, daily: 30 * 60e3, weekly: 6 * 3600e3 };
 const FETCH_TIMEOUT_MS = 15e3;
@@ -37,11 +42,17 @@ export function parseSymbol(raw, marketHint) {
   return { market: "stock", base: s, quote: null, display: s };
 }
 
+const PROVIDERS = {
+  yahoo: { fetch: fetchYahoo, ready: () => true },
+  twelvedata: { fetch: fetchTwelveData, ready: () => Boolean(process.env.TWELVE_DATA_API_KEY) },
+  alphavantage: { fetch: fetchAlphaVantage, ready: () => Boolean(process.env.ALPHA_VANTAGE_API_KEY) },
+};
+
+// Empty list means demo mode.
 export function configuredProviders() {
-  const list = [];
-  if (process.env.TWELVE_DATA_API_KEY) list.push("twelvedata");
-  if (process.env.ALPHA_VANTAGE_API_KEY) list.push("alphavantage");
-  return list;
+  const wanted = (process.env.MARKET_DATA_PROVIDERS || "yahoo,twelvedata,alphavantage")
+    .split(",").map(p => p.trim().toLowerCase());
+  return wanted.filter(p => PROVIDERS[p]?.ready());
 }
 
 export async function getCandles(rawSymbol, interval = "daily", marketHint) {
@@ -61,9 +72,8 @@ export async function getCandles(rawSymbol, interval = "daily", marketHint) {
     const errors = [];
     for (const p of providers) {
       try {
-        const candles = p === "twelvedata"
-          ? await fetchTwelveData(sym, interval)
-          : await fetchAlphaVantage(sym, interval);
+        const candles = await PROVIDERS[p].fetch(sym, interval);
+        if (!candles.length) throw new Error("No candles returned");
         data = { provider: p, demo: false, candles };
         break;
       } catch (err) {
@@ -80,8 +90,8 @@ export async function getCandles(rawSymbol, interval = "daily", marketHint) {
 
 // ── Providers ───────────────────────────────────────────────────
 
-async function getJson(url) {
-  const res = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+async function getJson(url, headers = {}) {
+  const res = await fetch(url, { headers, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
@@ -98,6 +108,26 @@ function toUnix(str) {
 function sortAndDedupe(candles) {
   candles.sort((a, b) => a.time - b.time);
   return candles.filter((c, i) => i === 0 || c.time !== candles[i - 1].time);
+}
+
+async function fetchYahoo(sym, interval) {
+  // Yahoo writes crypto pairs as BTC-USD.
+  const symbol = sym.market === "crypto" ? `${sym.base}-${sym.quote}` : sym.base;
+  const [yInterval, range] = YAHOO_INTERVAL[interval];
+  const url = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`);
+  url.search = new URLSearchParams({ interval: yInterval, range, includePrePost: "false" });
+  // Yahoo rejects requests without a browser-like user agent.
+  const json = await getJson(url, { "User-Agent": "Mozilla/5.0 (shadow-monarch-bot)" });
+  const result = json.chart?.result?.[0];
+  if (!result) throw new Error(json.chart?.error?.description || "Unexpected Yahoo response");
+  const q = result.indicators?.quote?.[0] ?? {};
+  const out = [];
+  (result.timestamp ?? []).forEach((t, i) => {
+    // Yahoo pads halted/partial bars with nulls.
+    if ([q.open, q.high, q.low, q.close].some(a => a?.[i] == null)) return;
+    out.push({ time: t, open: q.open[i], high: q.high[i], low: q.low[i], close: q.close[i], volume: q.volume?.[i] ?? 0 });
+  });
+  return sortAndDedupe(out);
 }
 
 async function fetchTwelveData(sym, interval) {

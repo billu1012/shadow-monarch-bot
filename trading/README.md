@@ -7,7 +7,7 @@ A free, legal stand-in for TradingView Premium, built from four pieces:
 | 1 | **Lightweight Charts** (TradingView's own open-source lib, Apache-2.0) | Your own TradingView-style chart at `/trading` | `dashboard/`, `routes.js` |
 | 2 | **tradingview-mcp** (MIT, unofficial) | Claude reads and drives *your* TradingView Desktop | `tradingview-mcp/` |
 | 3 | **Pine Script + community scripts** | A custom indicator with alerts, plus free open-source scripts | `pine/` |
-| 4 | **Market data APIs** (Twelve Data → Alpha Vantage) | Real prices for the chart and the signals API | `market.js` |
+| 4 | **Market data** (Yahoo Finance → Twelve Data → Alpha Vantage) | Real prices for the chart, the signals API and Discord | `market.js`, `../market_signals.py` |
 
 > Why not the "free reverse-engineered TradingView Premium" GitHub repos going around on X?
 > They're the standard bait for infostealer malware that targets traders' exchange logins
@@ -32,8 +32,8 @@ npm test                  # data-layer + indicator tests
 - Watchlist: click to load, **right-click to remove**, **+ Watch** to add. It's saved per browser.
 - Auto-refreshes every 60s, and the server caches responses so your free quota lasts
 
-With no API keys configured it shows **labelled demo data**. When keys are set but a provider
-fails, you get the error instead of fake prices.
+It works with no API keys (Yahoo Finance). If every provider fails you get the error, never
+fake prices. `MARKET_DATA_PROVIDERS=demo` gives labelled demo data for offline work.
 
 ### API (for the Discord bot, iPhone Shortcuts, etc.)
 
@@ -89,13 +89,25 @@ or asking you to download something to get them, is a scam.
 
 ## 4 · Market data
 
-Set either key in `.env` (locally) or in your host's environment variables (Railway/Render):
+Providers are tried in order, and a keyed provider is skipped when its key isn't set:
 
 | Provider | Free tier | Env var | Role |
 |---|---|---|---|
-| [Twelve Data](https://twelvedata.com/account/api-keys) | 800 req/day, 8/min | `TWELVE_DATA_API_KEY` | primary |
+| Yahoo Finance | no key; unofficial, can rate-limit | — | primary |
+| [Twelve Data](https://twelvedata.com/account/api-keys) | 800 req/day, 8/min | `TWELVE_DATA_API_KEY` | fallback |
 | [Alpha Vantage](https://www.alphavantage.co/support/#api-key) | 25 req/day | `ALPHA_VANTAGE_API_KEY` | fallback |
 
+`MARKET_DATA_PROVIDERS` changes the order (e.g. `twelvedata,yahoo`).
 Server-side cache TTLs: 1 min (5m bars), 3 min (15m), 10 min (1H), 30 min (1D), 6 h (1W).
-Some Alpha Vantage endpoints, such as crypto intraday, are premium-only. The API returns
-Alpha Vantage's message so you can see why.
+
+## 5 · Discord: `/signal` and the market brief
+
+`market_signals.py` gives the Python bot the same trend read straight from Yahoo, so it doesn't
+depend on the Express server being up. It uses the same scoring as the dashboard and the Pine
+indicator, and is cross-checked against the JS version.
+
+- `/signal NVDA` (optionally `interval:60min`): price, day change, bias, RSI, SMA 20/50, signals
+- `/brief` (optionally `symbols:AAPL,MSFT,BTC-USD`): one line per symbol plus a bull/bear tally
+- Auto-posts the brief to the quest channel on weekdays at `MARKET_BRIEF_TIME` (default 09:00 ET)
+  for `MARKET_WATCHLIST`
+- Crypto uses Yahoo's format: `BTC-USD` (`BTC/USD` also works)

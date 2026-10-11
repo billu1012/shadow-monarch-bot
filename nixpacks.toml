@@ -4,8 +4,7 @@ nixPkgs = ["nodejs_20"]
 [phases.install]
 cmds = ["npm install"]
 
-[phases.build]
-cmds = ["npm run build"]
+# No build phase: index.js serves lifeos/ and trading/ as static files.
 
 [start]
-cmd = "node server/index.js"
+cmd = "node index.js"

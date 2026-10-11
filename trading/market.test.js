@@ -9,6 +9,8 @@ let n = 0;
 beforeEach(() => {
   delete process.env.TWELVE_DATA_API_KEY;
   delete process.env.ALPHA_VANTAGE_API_KEY;
+  // Keyed providers only unless a test opts into Yahoo or demo.
+  process.env.MARKET_DATA_PROVIDERS = "twelvedata,alphavantage";
   n++; // unique symbols per test so the cache never interferes
 });
 
@@ -59,7 +61,39 @@ test("quota notice surfaces as an error, never as demo data", async () => {
   await assert.rejects(getCandles(`Q${n}`, "daily"), /rate limit/);
 });
 
-test("no keys → labelled demo data, cached on repeat", async () => {
+test("Yahoo: crypto symbol mapping, null bars dropped, UA header sent", async () => {
+  process.env.MARKET_DATA_PROVIDERS = "yahoo";
+  let req;
+  globalThis.fetch = async (u, opts) => { req = { url: String(u), opts }; return reply({ chart: { error: null, result: [{
+    meta: { symbol: `Y${n}-USD` },
+    timestamp: [1791590400, 1791676800, 1791763200],
+    indicators: { quote: [{ open: [1, null, 3], high: [2, 2, 4], low: [0.5, 1, 2.5], close: [1.5, 1.8, 3.5], volume: [10, 0, 30] }] },
+  }] } })(); };
+  const r = await getCandles(`Y${n}/USD`, "daily");
+  assert.equal(r.provider, "yahoo");
+  assert.match(req.url, new RegExp(`/chart/Y${n}-USD\\?interval=1d&range=2y`));
+  assert.ok(req.opts.headers["User-Agent"]);
+  assert.deepEqual(r.candles.map(c => c.time), [1791590400, 1791763200]);
+});
+
+test("Yahoo error falls through to Twelve Data", async () => {
+  process.env.MARKET_DATA_PROVIDERS = "yahoo,twelvedata";
+  process.env.TWELVE_DATA_API_KEY = "k";
+  globalThis.fetch = async u => String(u).includes("yahoo")
+    ? reply({ chart: { result: null, error: { code: "Not Found", description: "No data found, symbol may be delisted" } } })()
+    : reply({ status: "ok", values: [{ datetime: "2026-10-09", open: "1", high: "2", low: "0.5", close: "1.5", volume: "1" }] })();
+  const r = await getCandles(`YF${n}`, "daily");
+  assert.equal(r.provider, "twelvedata");
+});
+
+test("all providers failing reports each error", async () => {
+  process.env.MARKET_DATA_PROVIDERS = "yahoo";
+  globalThis.fetch = async () => ({ ok: false, status: 429, json: async () => ({}) });
+  await assert.rejects(getCandles(`YX${n}`, "daily"), /yahoo: HTTP 429/);
+});
+
+test("demo provider → labelled demo data, cached on repeat", async () => {
+  process.env.MARKET_DATA_PROVIDERS = "demo";
   const a = await getCandles(`DEMO${n}`, "daily");
   assert.equal(a.demo, true);
   assert.equal(a.candles.length, 300);

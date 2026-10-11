@@ -20,9 +20,11 @@ import random
 import hashlib
 from datetime import datetime, timedelta
 from lifeos_bridge import append_event
+from market_signals import get_signals, MarketError, INTERVALS as MARKET_INTERVALS
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
+import aiohttp
 from aiohttp import web
 
 # ── ENV ───────────────────────────────────────────────────────────────────────
@@ -54,6 +56,11 @@ C_CYAN      = 0x06B6D4
 C_EMERGENCY = 0xFF6B35   # urgent orange — Emergency Quest signature colour
 
 AVATAR_URL = "https://prcasley.github.io/j/monarch.jpg"
+
+# Market brief — Yahoo Finance symbols (crypto as BTC-USD), posted weekdays at MARKET_BRIEF_TIME ET
+MARKET_WATCHLIST  = [s.strip() for s in os.getenv("MARKET_WATCHLIST", "SPY,QQQ,NVDA,TSLA,BTC-USD,ETH-USD").split(",") if s.strip()]
+MARKET_BRIEF_TIME = os.getenv("MARKET_BRIEF_TIME", "09:00")
+BIAS_STYLE = {"bullish": ("🟢", C_GREEN), "bearish": ("🔴", C_RED), "neutral": ("🟡", C_GOLD)}
 
 RANK_UP_GIFS = {
     "D-Rank":         "https://media.tenor.com/imgbnO1rt5QAAAAM/master-roshi.gif",
@@ -1530,6 +1537,10 @@ class ShadowBot(commands.Bot):
         if hhmm == "21:00" and now.weekday() == 6 and should_fire("weekly_auto"):
             await self._send_weekly_summary()
 
+        # Weekdays — market brief for the watchlist
+        if hhmm == MARKET_BRIEF_TIME and now.weekday() < 5 and should_fire("market_brief"):
+            await self._send_market_brief()
+
         # Every 30 min — overdue penalty check
         if now.minute in (0, 30) and should_fire(f"overdue_{hhmm}"):
             await self._check_overdue(now)
@@ -1537,6 +1548,15 @@ class ShadowBot(commands.Bot):
     @scheduler.before_loop
     async def before_scheduler(self):
         await self.wait_until_ready()
+
+    async def _send_market_brief(self):
+        ch = await self.quest_channel()
+        if not ch:
+            return
+        try:
+            await ch.send(embed=await build_market_brief_embed())
+        except Exception as e:
+            log.error(f"Market brief failed: {e}")
 
     # ── weekly summary (auto-post + slash command helper) ─────────────────────
 
@@ -2142,6 +2162,83 @@ async def cmd_start(interaction: discord.Interaction):
     )
     await interaction.response.send_message("https://media.tenor.com/HMlYHYdk2SMAAAAd/solo-leveling-statue-smile-solo-leveling.gif")
     await interaction.followup.send(embed=embed, view=StartView(bot))
+
+
+def _fmt_price(v: float) -> str:
+    return f"{v:,.2f}" if abs(v) >= 1 else f"{v:,.6f}"
+
+
+def build_signal_embed(sig: dict) -> discord.Embed:
+    emoji, color = BIAS_STYLE[sig["bias"]]
+    arrow = "▲" if sig["change"] >= 0 else "▼"
+    embed = discord.Embed(
+        title=f"{emoji}  {sig['symbol']} — {sig['bias'].upper()}",
+        description=(
+            f"**{_fmt_price(sig['close'])} {sig['currency']}**  {arrow} {sig['change']:+,.2f} ({sig['change_pct']:+.2f}%)\n"
+            f"*{sig['name']} · {sig['interval']} bars*"
+        ),
+        color=color,
+    )
+    embed.add_field(name="RSI 14", value=f"{sig['rsi14']:.1f}", inline=True)
+    embed.add_field(name="SMA 20", value=_fmt_price(sig["sma20"]), inline=True)
+    embed.add_field(name="SMA 50", value=_fmt_price(sig["sma50"]), inline=True)
+    embed.add_field(name="Signals", value="\n".join(f"• {x}" for x in sig["signals"]), inline=False)
+    bar_time = datetime.fromtimestamp(sig["last_bar"], ET).strftime("%b %d %I:%M %p ET")
+    embed.set_footer(text=f"Yahoo Finance · last bar {bar_time} · trend context, not financial advice")
+    return embed
+
+
+async def build_market_brief_embed(symbols: list[str] | None = None) -> discord.Embed:
+    symbols = symbols or MARKET_WATCHLIST
+    async with aiohttp.ClientSession() as session:
+        results = await asyncio.gather(*(get_signals(s, "daily", session) for s in symbols), return_exceptions=True)
+
+    lines, counts = [], {"bullish": 0, "neutral": 0, "bearish": 0}
+    for sym, r in zip(symbols, results):
+        if isinstance(r, Exception):
+            reason = str(r) if isinstance(r, MarketError) else "data unavailable"
+            lines.append(f"⚪ **{sym.upper()}** — {reason}")
+            continue
+        counts[r["bias"]] += 1
+        emoji, _ = BIAS_STYLE[r["bias"]]
+        lines.append(
+            f"{emoji} **{r['symbol']}** {_fmt_price(r['close'])} ({r['change_pct']:+.2f}%) · RSI {r['rsi14']:.0f}"
+            + (f" · {r['signals'][0]}" if len(r["signals"]) > 1 else "")
+        )
+    color = C_GREEN if counts["bullish"] > counts["bearish"] else C_RED if counts["bearish"] > counts["bullish"] else C_GOLD
+    embed = discord.Embed(
+        title="📈  MARKET BRIEF",
+        description="\n".join(lines),
+        color=color,
+    )
+    embed.add_field(
+        name="Board",
+        value=f"🟢 {counts['bullish']} bullish · 🟡 {counts['neutral']} neutral · 🔴 {counts['bearish']} bearish",
+        inline=False,
+    )
+    embed.set_footer(text=f"Daily bars · Yahoo Finance · {datetime.now(ET).strftime('%a %b %d')} · /signal <symbol> for detail")
+    return embed
+
+
+@bot.tree.command(name="signal", description="Trend read for a stock or crypto (e.g. NVDA, BTC-USD)")
+@app_commands.describe(symbol="Ticker — stocks like NVDA, crypto like BTC-USD", interval="Bar size (default daily)")
+@app_commands.choices(interval=[app_commands.Choice(name=i, value=i) for i in MARKET_INTERVALS])
+async def cmd_signal(interaction: discord.Interaction, symbol: str, interval: str = "daily"):
+    await interaction.response.defer()
+    try:
+        sig = await get_signals(symbol, interval)
+    except MarketError as e:
+        await interaction.followup.send(f"⚠️ {e}")
+        return
+    await interaction.followup.send(embed=build_signal_embed(sig))
+
+
+@bot.tree.command(name="brief", description="Market brief for your watchlist (or a custom list)")
+@app_commands.describe(symbols="Optional comma-separated list, e.g. AAPL,MSFT,BTC-USD")
+async def cmd_brief(interaction: discord.Interaction, symbols: str = ""):
+    await interaction.response.defer()
+    custom = [s.strip() for s in symbols.split(",") if s.strip()][:10]
+    await interaction.followup.send(embed=await build_market_brief_embed(custom or None))
 
 
 # ═════════════════════════════════════════════════════════════════════════════
