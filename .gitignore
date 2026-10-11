@@ -37,6 +37,7 @@ j/
 !package.json
 !package-lock.json
 !lifeos/index.html
+!trading/dashboard/index.html
 
 # Windows-reserved legacy file preserved under docs/legacy-j
 /nul
