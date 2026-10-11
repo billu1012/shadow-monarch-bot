@@ -299,6 +299,8 @@ function pushTrace() {
     $('trace').innerHTML = real.map(([at, id, t]) => `<div><span>${esc(clock(at))}</span><span>${esc(id.split('-')[0])}</span><span>${esc(t || '')}</span></div>`).join('');
     return;
   }
+  // Connected but nothing reported yet: say so rather than replaying old runs beside the LIVE badge.
+  if (live) { $('trace').innerHTML = '<div><span>--</span><span>board</span><span>live · no steps reported yet</span></div>'; return; }
   for (let i = Math.max(0, traceN - 6); i < traceN; i++) { const [a, b] = TRACE[i % TRACE.length]; rows.push(`<div><span>${String(i % 60).padStart(2, '0')}.${String((i * 37) % 100).padStart(2, '0')}</span><span>${a}</span><span>${esc(b)}</span></div>`); }
   $('trace').innerHTML = rows.join('');
 }
