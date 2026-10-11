@@ -1,13 +1,14 @@
-<!doctype html>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Igris Shadow Multiverse</title>
 <style>
 /* Layout: an Agent Factory routing graph (inputs → routers → agents → outputs) drawn on one canvas that tilts
-   into 3D per phase, a status bar above it, and four instrument panels below. Single dark look by choice. */
+   into 3D per phase, a status bar above it, and four instrument panels below. v3: Solo Leveling shadow palette,
+   the agent rows are the factory's real agents with live status, and tapping a block dives the camera into it and
+   opens its System window with each agent's task, steps and reasons. Single dark look by choice. */
 :root {
-  --bg: #07060a; --panel: #0d0c12; --line: #24222c; --ink: #ffffff; --ink-2: #c9c6d4; --ink-3: #8a8796;
-  --pink: #ff3d8b; --violet: #8b5cf6; --yellow: #ffe14d; --orange: #ff7a3d; --lime: #c6f135; --teal: #3ff0c8; --cyan: #22c3dc; --blue: #4d7cff; --gold: #e3b45e; --red: #ff4d5e;
+  --bg: #04050b; --panel: #080b17; --line: #1a2340; --ink: #ffffff; --ink-2: #c3cbe0; --ink-3: #7f8bab;
+  --pink: #4fa8ff; --violet: #8c5cff; --yellow: #f2c14e; --orange: #ff3d6e; --lime: #7fe3ff; --teal: #3ff0c8; --cyan: #4fa8ff; --blue: #6f7dff; --gold: #f2c14e; --red: #ff3d6e;
+  --system: #4fa8ff; --ok: #43e0a6;
   --mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
   color-scheme: dark;
 }
@@ -23,10 +24,36 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .bar .y { color: var(--yellow); } .bar .p { color: var(--pink); }
 .bar .right { margin-left: auto; color: var(--pink); text-transform: none; letter-spacing: 0; font-size: 12px; }
 .bar .sim { color: var(--bg); background: var(--ink-3); padding: 1px 6px; border-radius: 3px; font-weight: 700; }
+.bar .live { color: var(--bg); background: var(--ok); padding: 1px 6px; border-radius: 3px; font-weight: 700; }
+.bar .sys { color: var(--system); letter-spacing: 0.22em; }
+/* The System window for a block: docked right on wide screens, a bottom sheet on phones. */
+.win { position: fixed; z-index: 61; top: 16px; right: 16px; bottom: 16px; width: min(400px, calc(100vw - 32px)); display: grid; grid-template-rows: auto 1fr;
+  background: rgba(6, 10, 24, 0.94); border: 1px solid var(--system); border-radius: 6px; box-shadow: 0 0 0 1px rgba(79,168,255,.2), 0 0 48px rgba(79,168,255,.25); overflow: hidden; }
+.win header { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-bottom: 1px solid var(--line); background: linear-gradient(90deg, rgba(79,168,255,.14), transparent); }
+.win header small { display: block; font-size: 10.5px; letter-spacing: 0.22em; color: var(--system); text-transform: uppercase; }
+.win header h4 { margin: 2px 0 0; font-size: 17px; min-width: 0; overflow-wrap: anywhere; }
+.win .x { margin-left: auto; width: 32px; height: 32px; flex: none; border: 1px solid var(--line); border-radius: 4px; display: grid; place-items: center; font-size: 18px; color: var(--ink-2); }
+.win .body { overflow-y: auto; padding: 10px 14px 16px; display: grid; gap: 12px; align-content: start; }
+.win .info { margin: 0; color: var(--ink-2); font-size: 12.5px; }
+.agent { border: 1px solid var(--line); border-radius: 5px; padding: 10px; display: grid; gap: 6px; background: rgba(10, 16, 36, 0.7); }
+.agent .hd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.agent .hd b { font-size: 13.5px; }
+.agent .ago { margin-left: auto; font-size: 11px; color: var(--ink-3); }
+.agent .task { font-size: 12.5px; color: var(--ink); overflow-wrap: anywhere; }
+.st { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; border: 1px solid currentColor; }
+.st-idle { color: var(--ink-3); } .st-doing { color: var(--system); } .st-done { color: var(--ok); } .st-blocked { color: var(--red); }
+.agent ol { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 8px; }
+.agent li { display: grid; grid-template-columns: 52px 1fr; gap: 8px; font-size: 12px; border-top: 1px dashed var(--line); padding-top: 7px; }
+.agent li time { color: var(--system); font-variant-numeric: tabular-nums; }
+.agent li .w { color: var(--ink); overflow-wrap: anywhere; }
+.agent li .y { margin-top: 3px; color: var(--ink-2); padding-left: 8px; border-left: 2px solid var(--violet); overflow-wrap: anywhere; }
+.agent li .y::before { content: "why · "; color: var(--violet); }
+.agent .none { font-size: 12px; color: var(--ink-3); }
+@media (max-width: 640px) { .win { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 62vh; } }
 .ctl { display: flex; gap: 6px; }
 .ctl button { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 8px; border: 1px solid var(--line); border-radius: 4px; color: var(--ink-2); background: rgba(7,6,10,.7); }
 .ctl button:hover { color: var(--ink); border-color: var(--ink-3); }
-.graph { position: relative; height: min(88vh, 92vw); min-height: 420px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: radial-gradient(ellipse at 50% 45%, #120e1c 0%, var(--bg) 72%); touch-action: manipulation; }
+.graph { position: relative; height: min(88vh, 92vw); min-height: 420px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: radial-gradient(ellipse at 50% 108%, rgba(140,92,255,0.26) 0%, rgba(4,5,11,0) 55%), radial-gradient(ellipse at 50% 42%, #0b1126 0%, var(--bg) 72%); touch-action: manipulation; }
 .graph canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .phase { position: absolute; left: 14%; top: 14px; padding-left: 10px; border-left: 2px solid var(--c, var(--pink)); pointer-events: none; }
 .phase b { display: block; font-size: clamp(15px, 2.6vw, 22px); letter-spacing: 0.04em; }
@@ -76,9 +103,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     <div class="pnl"><h3 style="border-color:var(--teal)">Igris core <small>factory v1</small></h3><canvas id="c3" height="110"></canvas><div class="code" id="code"></div></div>
     <div class="pnl"><h3 style="border-color:var(--lime)">Gate matrix <small>0.85 gate</small></h3><canvas id="c4" height="130"></canvas><div class="kv" id="gkv"></div></div>
   </section>
-  <footer class="foot"><span><b>prat</b> · CEO · Agent Factory</span><span>Routing is simulated; the trace replays real Oct 11 runs</span><span>IGRIS SHADOW MULTIVERSE · v2</span></footer>
+  <footer class="foot"><span><b>prat</b> · CEO · Agent Factory</span><span>Agent rows and the trace are live from the factory board; routing motion is animation. Reasons are each agent's own notes.</span><span>IGRIS SHADOW MULTIVERSE · v3</span></footer>
 </div>
-<div class="overlay" id="overlay" hidden><div class="card" id="card" role="dialog" aria-modal="true"></div></div>
+<section class="win" id="win" role="dialog" aria-labelledby="winName" hidden><header><div style="min-width:0"><small id="winKind">System</small><h4 id="winName">Block</h4></div><button class="x" id="winClose" type="button" aria-label="Close">×</button></header><div class="body" id="winBody"></div></section>
 <div class="tip" id="tip" hidden></div>
 
 <script>
@@ -90,7 +117,16 @@ const FONT = getComputedStyle(document.body).fontFamily;
 let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 
 /* ---------------- blocks: the factory as a graph (graph space 1080 × 980) ---------------- */
-const C = { pink: '#ff3d8b', violet: '#7a4dff', yellow: '#e8d23c', orange: '#ff7a3d', lime: '#b6d730', teal: '#1fae8c', cyan: '#22b5c9', blue: '#3a6df0', olive: '#a99b2f', grey: '#7d8190', green: '#1f7a68' };
+const C = { pink: '#3d8bff', violet: '#8c5cff', yellow: '#5fc8ec', orange: '#6a4dff', lime: '#ff3d6e', teal: '#1fae8c', cyan: '#2fb4d6', blue: '#c9a03c', olive: '#4b3fa8', grey: '#5c6680', green: '#1f4f8f' };
+// The factory's real agents, by the row label they wear inside the graph.
+const AG = { 'product-mgr': 'product-manager', 'tech-lead': 'tech-lead', 'igris': 'igris', 'frontend': 'frontend-engineer', 'backend': 'backend-engineer', 'reviewer': 'code-reviewer',
+  'designer': 'product-designer', 'ux-research': 'ux-researcher', 'market-research': 'market-researcher', 'data-sci': 'data-scientist',
+  'privacy-sec': 'privacy-security-reviewer', 'cost-ctrl': 'cost-controller', 'qa': 'qa-engineer', 'launch-mgr': 'launch-manager', 'content': 'content-strategist', 'release': 'release-engineer' };
+const AGNAME = { 'product-manager': 'Product Manager', 'tech-lead': 'Tech Lead', igris: 'Igris · Commander', 'frontend-engineer': 'Frontend Engineer', 'backend-engineer': 'Backend Engineer',
+  'code-reviewer': 'Code Reviewer', 'product-designer': 'Product Designer', 'ux-researcher': 'UX Researcher', 'market-researcher': 'Market Researcher', 'data-scientist': 'Data Scientist',
+  'privacy-security-reviewer': 'Privacy & Security', 'cost-controller': 'Cost Controller', 'qa-engineer': 'QA Engineer', 'launch-manager': 'Launch Manager', 'content-strategist': 'Content Strategist', 'release-engineer': 'Release Engineer' };
+let docs = {}, live = false;
+const stOf = (id) => { const s = docs[id] && docs[id].status; return s === 'doing' || s === 'done' || s === 'blocked' ? s : 'idle'; };
 const B = [];
 function block(id, col, y, name, color, rows, info) { const xs = [20, 555, 735, 910], ws = [128, 158, 152, 150], zs = [0, -60, -120, -180]; B.push({ id, col, x: xs[col], y, w: ws[col], z: zs[col], name, color, rows, info }); }
 block('idea', 0, 88, 'idea', C.green, ['the_ask', 'context', 'deadline', 'owner'], 'What comes in: your ask, its context and deadline.');
@@ -99,23 +135,23 @@ block('repo', 0, 424, 'repo', C.green, ['branch', 'tests', 'diff', 'ci'], 'The c
 block('memory', 0, 575, 'memory', C.olive, ['export', 'drafts', 'lanes', 'guard', 'stale'], 'What I know about you: the Oct 11 memory export, drafts, lanes and the guard.');
 block('last', 0, 756, 'last_run', C.green, ['launch_review', 'verdict', 'holds', 'cost'], 'The previous run, so nothing is repeated.');
 block('state', 1, 86, 'state · pack', C.pink, ['goal', 'board', 'repo', 'memory', 'cached'], 'Igris packs everything an agent needs into one typed state.');
-block('spec', 1, 282, 'spec · typed', C.pink, ['problem', 'users', 'metric', 'non_goals', 'cuts'], 'product-manager: a one-page spec. Problem, users, success metric, non-goals, scope cuts.');
+block('spec', 1, 282, 'spec · typed', C.pink, ['product-mgr', 'tech-lead', 'problem', 'metric', 'cuts'], 'The product manager writes a one-page spec; the tech lead turns it into a design doc and small diffs.');
 block('rank', 1, 478, 'rank · priority', C.cyan, ['low', 'medium', 'high', 'urgent', 'trend'], 'What goes first. The hackathon outranks everything until Oct 30.');
 block('gate', 1, 674, 'gate · 0.85', C.lime, ['passed', 'hold', 'human', 'override'], 'The launch gate: privacy, cost and launch reviews. Any block stops the ship.');
 block('reviewq', 1, 870, 'review_q · 6/6', C.yellow, ['required', 'queued', 'typed_json', 'schema', 'retries'], 'code-reviewer: nothing lands without review. Blocking, Should fix, Nit, verdict.');
-block('igris', 2, 120, 'igris · decide', C.violet, ['state_tok', 'no_chat', 'confidence', 'options', 'output', 'max_out'], 'Me, the engineering manager: I route each job to the right agents and say who goes next.');
-block('build', 2, 317, 'build · write', C.orange, ['frontend', 'backend', 'tests', 'diff', 'words'], 'frontend-engineer and backend-engineer: small diffs, honest failure paths, 400px-ready.');
-block('research', 2, 513, 'research', C.orange, ['sources', 'notes', 'prior_art', 'pricing', 'applied'], 'ux-researcher and market-researcher: evidence and sources, never invented.');
-block('score', 2, 709, 'score', C.orange, ['privacy', 'cost', 'launch', 'qa', 'verdict'], 'privacy-security-reviewer, cost-controller, launch-manager and qa-engineer score the work.');
-block('human', 2, 905, 'prat · review', C.blue, ['budget', 'edits', 'reads', 'approvals'], 'You. Every push, deploy and dollar waits for your approval.');
+block('igris', 2, 120, 'igris · decide', C.violet, ['igris', 'route', 'confidence', 'options', 'hold', 'next'], 'Igris, the commander: routes each job to the right shadows and says who goes next.');
+block('build', 2, 317, 'build · write', C.orange, ['frontend', 'backend', 'reviewer', 'tests', 'diff'], 'The engineers build in small diffs with tests; the code reviewer lets nothing land unreviewed.');
+block('research', 2, 513, 'research · design', C.orange, ['designer', 'ux-research', 'market-research', 'data-sci', 'sources'], 'Design and research: flows and screens, user tests, markets and rules with sources, real numbers.');
+block('score', 2, 709, 'score', C.orange, ['privacy-sec', 'cost-ctrl', 'qa', 'launch-mgr', 'verdict'], 'Privacy, cost, QA and launch reviews score the work before anything ships.');
+block('human', 2, 905, 'prat · monarch', C.blue, ['budget', 'edits', 'reads', 'approvals'], 'You, the Shadow Monarch. Every push, deploy and dollar waits for your approval.');
 block('oplan', 3, 96, 'out.plan', C.teal, ['design_doc', 'diffs', 'owner', 'next'], 'tech-lead: the design doc and a plan of small diffs, each with an owner and a test.');
 block('ocode', 3, 292, 'out.code', C.teal, ['passed', 'review', 'valid', 'merged'], 'Code that passed review and QA.');
 block('overdict', 3, 488, 'out.verdict', C.teal, ['go', 'conditions', 'no_go', 'flaky'], 'launch-manager: Go, Go with conditions, or No go.');
-block('drafts', 3, 684, 'drafts/', C.olive, ['readme', 'devpost', 'video', 'release_notes'], 'content-strategist: README, Devpost, demo video script, release notes.');
-block('queue', 3, 880, 'queue/', C.grey, ['main.json', 'deploy', 'approved', 'cleared'], 'release-engineer: the ship queue. Deploys wait for you.');
+block('drafts', 3, 684, 'drafts/', C.olive, ['content', 'readme', 'devpost', 'video'], 'The content strategist: README, Devpost, demo video script, release notes.');
+block('queue', 3, 880, 'queue/', C.grey, ['release', 'main.json', 'deploy', 'approved'], 'The release engineer: the ship queue. Deploys wait for you.');
 const byId = Object.fromEntries(B.map(b => [b.id, b]));
 const HEAD = 14, ROW = 11.5;
-B.forEach(b => { b.h = HEAD + b.rows.length * ROW + 4; b.vals = b.rows.map(() => +(rnd() * 1.6).toFixed(3)); b.bars = b.rows.map(() => 0.25 + rnd() * 0.65); });
+B.forEach(b => { b.agents = b.rows.filter(r => AG[r]).map(r => AG[r]); b.h = HEAD + b.rows.length * ROW + 4; b.vals = b.rows.map(() => +(rnd() * 1.6).toFixed(3)); b.bars = b.rows.map(() => 0.25 + rnd() * 0.65); });
 const port = (b, i, side) => [side ? b.x + b.w : b.x, b.y + HEAD + i * ROW + ROW / 2, b.z];
 const RAIL = 307;
 
@@ -138,15 +174,15 @@ L.forEach(l => {
 
 /* ---------------- phases ---------------- */
 const PH = [
-  { n: '01 IDEA IN', sub: 'idea · board · repo · memory', c: '#ff3d8b', from: ['idea', 'board', 'repo', 'memory', 'last'], to: ['state', 'spec'], tag: ['spec · typed', 'product-manager · one page'], yaw: -0.5, pitch: 0.5, roll: -0.28 },
-  { n: '02 IGRIS ROUTES', sub: 'typed spec · no prose', c: '#9b7bff', from: ['state', 'spec', 'rank'], to: ['igris', 'oplan'], tag: ['igris · decide', '15 agents · who goes next'], yaw: 0.45, pitch: 0.55, roll: 0.22 },
-  { n: '03 AGENTS BUILD', sub: 'only the work that needs code', c: '#ffe14d', from: ['spec', 'state', 'igris'], to: ['build', 'research', 'ocode', 'drafts'], tag: ['build · write', 'small diffs · each with a test'], yaw: -0.4, pitch: 0.6, roll: -0.3 },
-  { n: '04 GATE HOLDS', sub: 'privacy · cost · launch · 0.85', c: '#ff6a3d', from: ['build', 'gate', 'reviewq'], to: ['score', 'gate', 'overdict'], tag: ['gate · 0.85', 'any block stops the ship'], yaw: 0.5, pitch: 0.55, roll: 0.25 },
-  { n: '05 PRAT REVIEWS', sub: 'you read the diff · you approve', c: '#ffffff', from: ['reviewq', 'score', 'gate'], to: ['human', 'queue'], tag: ['prat · review', 'pushes · deploys · spend'], yaw: 0, pitch: 0, roll: 0, flat: true },
+  { n: '01 IDEA IN', sub: 'idea · board · repo · memory', c: '#4fa8ff', from: ['idea', 'board', 'repo', 'memory', 'last'], to: ['state', 'spec'], tag: ['spec · typed', 'product-manager · one page'], yaw: -0.5, pitch: 0.5, roll: -0.28 },
+  { n: '02 IGRIS ROUTES', sub: 'typed spec · no prose', c: '#a77bff', from: ['state', 'spec', 'rank'], to: ['igris', 'oplan'], tag: ['igris · decide', '15 agents · who goes next'], yaw: 0.45, pitch: 0.55, roll: 0.22 },
+  { n: '03 AGENTS BUILD', sub: 'only the work that needs code', c: '#7fe3ff', from: ['spec', 'state', 'igris'], to: ['build', 'research', 'ocode', 'drafts'], tag: ['build · write', 'small diffs · each with a test'], yaw: -0.4, pitch: 0.6, roll: -0.3 },
+  { n: '04 GATE HOLDS', sub: 'privacy · cost · launch · 0.85', c: '#ff3d6e', from: ['build', 'gate', 'reviewq'], to: ['score', 'gate', 'overdict'], tag: ['gate · 0.85', 'any block stops the ship'], yaw: 0.5, pitch: 0.55, roll: 0.25 },
+  { n: '05 THE MONARCH REVIEWS', sub: 'you read the diff · you approve', c: '#f2c14e', from: ['reviewq', 'score', 'gate'], to: ['human', 'queue'], tag: ['prat · review', 'pushes · deploys · spend'], yaw: 0, pitch: 0, roll: 0, flat: true },
   { n: '06 RELEASE ACTS', sub: 'queue/ main.json · deploy waits on you', c: '#3ff0c8', from: ['human', 'igris', 'build'], to: ['queue', 'ocode', 'drafts', 'overdict'], tag: ['queue/ main.json', 'release-engineer · ships'], yaw: -0.35, pitch: 0.5, roll: -0.2 },
 ];
 const PHASE_T = 7.5;
-let phase = 0, pt = 0, paused = false;
+let phase = 0, pt = 0, paused = false, focus = null, fk = 0;
 
 /* ---------------- canvas + camera ---------------- */
 const gw = $('graph'), cv = $('cv'), g = cv.getContext('2d');
@@ -170,7 +206,15 @@ function camera() {
   const k = (ph.flat || reduce) ? 0 : sm((pt - 2.0) / 1.4) * (1 - sm((pt - (PHASE_T - 1.1)) / 1.1));
   cam.yaw = ph.yaw * k; cam.pitch = ph.pitch * k; cam.roll = ph.roll * k; cam.zoom = 1 + 0.75 * k;
   cam.fx = 540 + (cx - 540) * k; cam.fy = 490 + (cyy - 490) * k;
+  // A tapped block pulls the camera in: tilt toward it and zoom until it fills the left of the view.
+  if (fk > 0.001 && focusLast) {
+    const b = focusLast, e = sm(fk), wide = W > 640, tx = b.x + b.w / 2 + (wide ? 150 : 0), ty = b.y + b.h / 2 + (wide ? 0 : 150);
+    const t = reduce ? 0 : 1;
+    cam.yaw += (0.32 * t - cam.yaw) * e; cam.pitch += (0.42 * t - cam.pitch) * e; cam.roll += (0.12 * t - cam.roll) * e;
+    cam.zoom += ((wide ? 2.3 : 1.9) - cam.zoom) * e; cam.fx += (tx - cam.fx) * e; cam.fy += (ty - cam.fy) * e;
+  }
 }
+let focusLast = null;
 
 /* ---------------- draw graph ---------------- */
 let quads = [];
@@ -179,16 +223,27 @@ function drawBlock(b, act) {
   quads.push([b, [p00, p10, p11, p01]]);
   g.setTransform(PR * (p10[0] - p00[0]) / b.w, PR * (p10[1] - p00[1]) / b.w, PR * (p01[0] - p00[0]) / b.h, PR * (p01[1] - p00[1]) / b.h, PR * p00[0], PR * p00[1]);
   g.globalAlpha = act ? 1 : 0.62;
-  g.fillStyle = 'rgba(10,9,14,0.92)'; g.fillRect(0, 0, b.w, b.h);
-  g.strokeStyle = b.color; g.lineWidth = act ? 1.2 : 0.6; g.strokeRect(0, 0, b.w, b.h);
+  g.fillStyle = 'rgba(6,9,20,0.93)'; g.fillRect(0, 0, b.w, b.h);
+  const working = b.agents.some(id => stOf(id) === 'doing');
+  if (working) { g.shadowColor = '#4fa8ff'; g.shadowBlur = 10 + 6 * Math.sin(T * 3); }
+  g.strokeStyle = working ? '#4fa8ff' : b.color; g.lineWidth = act || working ? 1.2 : 0.6; g.strokeRect(0, 0, b.w, b.h); g.shadowBlur = 0;
+  if (focusLast === b && fk > 0.5) { g.strokeStyle = '#ffffff'; g.lineWidth = 1.6; g.strokeRect(-2, -2, b.w + 4, b.h + 4); }
   g.fillStyle = b.color; g.fillRect(0, 0, b.w, HEAD);
   g.fillStyle = '#fff'; g.font = `700 8.5px ${FONT}`; g.textBaseline = 'middle'; g.textAlign = 'left'; g.fillText(b.name, 5, HEAD / 2 + 0.5);
   g.font = `500 6.8px ${FONT}`;
   b.rows.forEach((r, i) => {
-    const y = HEAD + i * ROW + 2;
-    g.fillStyle = b.color + '55'; g.fillRect(6, y + 1, (b.w - 50) * b.bars[i], ROW - 3);
-    g.fillStyle = '#e9e6f2'; g.fillText(r, 9, y + ROW / 2 - 0.5);
-    g.textAlign = 'right'; g.fillStyle = '#c9c6d4'; g.fillText(b.vals[i].toFixed(3), b.w - 6, y + ROW / 2 - 0.5); g.textAlign = 'left';
+    const y = HEAD + i * ROW + 2, id = AG[r];
+    if (id) {
+      const st = stOf(id), pulse = 0.55 + 0.4 * Math.sin(T * 4 + i);
+      const sc = { idle: '#7f8bab', doing: '#4fa8ff', done: '#43e0a6', blocked: '#ff3d6e' }[st];
+      g.fillStyle = sc + (st === 'idle' ? '33' : '55'); g.fillRect(6, y + 1, (b.w - 50) * (st === 'idle' ? 0.12 : st === 'doing' ? pulse : 1), ROW - 3);
+      g.fillStyle = '#ffffff'; g.font = `700 6.8px ${FONT}`; g.fillText((st === 'doing' ? '▸ ' : '') + r, 9, y + ROW / 2 - 0.5); g.font = `500 6.8px ${FONT}`;
+      g.textAlign = 'right'; g.fillStyle = sc; g.fillText(st, b.w - 6, y + ROW / 2 - 0.5); g.textAlign = 'left';
+    } else {
+      g.fillStyle = b.color + '55'; g.fillRect(6, y + 1, (b.w - 50) * b.bars[i], ROW - 3);
+      g.fillStyle = '#e9e6f2'; g.fillText(r, 9, y + ROW / 2 - 0.5);
+      g.textAlign = 'right'; g.fillStyle = '#c3cbe0'; g.fillText(b.vals[i].toFixed(3), b.w - 6, y + ROW / 2 - 0.5); g.textAlign = 'left';
+    }
     g.fillStyle = b.color; g.beginPath(); g.arc(0, y + ROW / 2 - 1, 1.6, 0, 6.283); g.arc(b.w, y + ROW / 2 - 1, 1.6, 0, 6.283); g.fill();
   });
   g.globalAlpha = 1; g.setTransform(PR, 0, 0, PR, 0, 0);
@@ -203,9 +258,9 @@ function drawGraph() {
   g.setTransform(PR, 0, 0, PR, 0, 0); g.clearRect(0, 0, W, H);
   for (const [x, y, a] of BG) { g.fillStyle = `rgba(255,255,255,${a * (0.6 + 0.4 * Math.sin(T + x * 40))})`; g.fillRect(x * W, y * H, 1.2, 1.2); }
   const ph = PH[phase], fromS = new Set(ph.from), toS = new Set(ph.to);
-  g.strokeStyle = 'rgba(255,60,90,0.09)'; g.lineWidth = 1;
+  g.strokeStyle = 'rgba(140,92,255,0.10)'; g.lineWidth = 1;
   g.beginPath(); for (let i = 0; i < 9; i++) { const a = P([540 + Math.cos(i * 0.7) * 520, 490 + Math.sin(i * 1.3) * 420, -260]), b = P([540 + Math.cos(i * 0.7 + 2.4) * 520, 490 + Math.sin(i * 1.3 + 2) * 420, -260]); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); } g.stroke();
-  const r0 = P([RAIL, 60, -30]), r1 = P([RAIL, 960, -30]); g.strokeStyle = 'rgba(63,240,200,0.35)'; g.lineWidth = 2; g.beginPath(); g.moveTo(r0[0], r0[1]); g.lineTo(r1[0], r1[1]); g.stroke();
+  const r0 = P([RAIL, 60, -30]), r1 = P([RAIL, 960, -30]); g.strokeStyle = 'rgba(79,168,255,0.42)'; g.lineWidth = 2; g.beginPath(); g.moveTo(r0[0], r0[1]); g.lineTo(r1[0], r1[1]); g.stroke();
   const proj = L.map(l => l.pts.map(P));
   g.strokeStyle = 'rgba(220,220,235,0.13)'; g.lineWidth = 0.8; g.beginPath();
   proj.forEach(pp => { g.moveTo(pp[0][0], pp[0][1]); for (let i = 1; i < pp.length; i++) g.lineTo(pp[i][0], pp[i][1]); }); g.stroke();
@@ -221,13 +276,13 @@ function drawGraph() {
   });
   g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
   quads = [];
-  B.slice().sort((a, b) => P([b.x, b.y, b.z])[2] - P([a.x, a.y, a.z])[2]).forEach(b => drawBlock(b, fromS.has(b.id) || toS.has(b.id)));
+  B.slice().sort((a, b) => P([b.x, b.y, b.z])[2] - P([a.x, a.y, a.z])[2]).forEach(b => drawBlock(b, fromS.has(b.id) || toS.has(b.id) || focusLast === b));
   const tb = byId[ph.to[0]], tp = P([tb.x + tb.w + 6, tb.y - 4, tb.z]);
   g.font = `600 12px ${FONT}`; const w1 = Math.max(g.measureText(ph.tag[0]).width, g.measureText(ph.tag[1]).width * 0.9) + 18;
   const tx = Math.min(W - w1 - 6, Math.max(6, tp[0])), ty = Math.max(40, Math.min(H - 46, tp[1]));
   g.fillStyle = 'rgba(8,7,12,0.92)'; g.fillRect(tx, ty, w1, 36); g.strokeStyle = ph.c; g.lineWidth = 1; g.strokeRect(tx, ty, w1, 36);
   g.fillStyle = '#fff'; g.textBaseline = 'top'; g.fillText(ph.tag[0], tx + 9, ty + 5);
-  g.font = `11px ${FONT}`; g.fillStyle = ph.c === '#ffffff' ? '#c9c6d4' : ph.c; g.fillText(ph.tag[1], tx + 9, ty + 20); g.textBaseline = 'alphabetic';
+  g.font = `11px ${FONT}`; g.fillStyle = ph.c; g.fillText(ph.tag[1], tx + 9, ty + 20); g.textBaseline = 'alphabetic';
 }
 
 /* ---------------- instrument panels (simulated motion, real trace) ---------------- */
@@ -239,6 +294,13 @@ const TRACE = [
 let traceN = 0, decisions = 0, cost = 0, tick = 0;
 function pushTrace() {
   traceN++; const rows = [];
+  const real = Object.entries(docs).flatMap(([id, d]) => (Array.isArray(d.steps) ? d.steps : []).map(st => [st.at, id, st.text])).sort((a, b) => String(b[0]).localeCompare(String(a[0]))).slice(0, 6);
+  if (real.length) {
+    $('trace').innerHTML = real.map(([at, id, t]) => `<div><span>${esc(clock(at))}</span><span>${esc(id.split('-')[0])}</span><span>${esc(t || '')}</span></div>`).join('');
+    return;
+  }
+  // Connected but nothing reported yet: say so rather than replaying old runs beside the LIVE badge.
+  if (live) { $('trace').innerHTML = '<div><span>--</span><span>board</span><span>live · no steps reported yet</span></div>'; return; }
   for (let i = Math.max(0, traceN - 6); i < traceN; i++) { const [a, b] = TRACE[i % TRACE.length]; rows.push(`<div><span>${String(i % 60).padStart(2, '0')}.${String((i * 37) % 100).padStart(2, '0')}</span><span>${a}</span><span>${esc(b)}</span></div>`); }
   $('trace').innerHTML = rows.join('');
 }
@@ -259,7 +321,7 @@ function hl(src) {
 }
 function panelSize(c) { const r = c.getBoundingClientRect(), pr = Math.min(2, devicePixelRatio || 1), hh = +c.getAttribute('height'); if (c._w !== r.width) { c._w = r.width; c.width = Math.round(r.width * pr); c.height = Math.round(hh * pr); c.style.height = hh + 'px'; } const x = c.getContext('2d'); x.setTransform(pr, 0, 0, pr, 0, 0); return [x, r.width, hh]; }
 const heat = Array.from({ length: 56 * 6 }, () => Math.random());
-const lanes = ['spec', 'design', 'build', 'review', 'qa', 'gate', 'ready'], laneCol = ['#ff3d8b', '#9b7bff', '#ffe14d', '#22c3dc', '#4d7cff', '#ff6a3d', '#3ff0c8'];
+const lanes = ['spec', 'design', 'build', 'review', 'qa', 'gate', 'ready'], laneCol = ['#4fa8ff', '#a77bff', '#7fe3ff', '#5fc8ec', '#6f7dff', '#ff3d6e', '#3ff0c8'];
 const laneOfPhase = ['spec', 'design', 'build', 'gate', 'review', 'ready'];
 const thr = Array.from({ length: 48 }, () => 0.3 + Math.random() * 0.7);
 function panels() {
@@ -267,9 +329,9 @@ function panels() {
   let [x, w, h] = panelSize($('c1'));
   x.clearRect(0, 0, w, h);
   x.strokeStyle = '#9b7bff'; x.lineWidth = 1.4; x.beginPath(); for (let i = 0; i <= w; i += 3) { const y = 22 + Math.sin(i * 0.05 + T * 2) * 6 + Math.sin(i * 0.13 + T) * 3; i ? x.lineTo(i, y) : x.moveTo(i, y); } x.stroke();
-  x.strokeStyle = '#ff3d8b'; x.beginPath(); for (let i = 0; i <= w; i += 3) { const y = 58 + (Math.sin(i * 0.09 - T * 3) > 0.3 ? -8 : 0); i ? x.lineTo(i, y) : x.moveTo(i, y); } x.stroke();
+  x.strokeStyle = '#4fa8ff'; x.beginPath(); for (let i = 0; i <= w; i += 3) { const y = 58 + (Math.sin(i * 0.09 - T * 3) > 0.3 ? -8 : 0); i ? x.lineTo(i, y) : x.moveTo(i, y); } x.stroke();
   x.fillStyle = '#8a8796'; x.font = `10px ${FONT}`; x.fillText('igris', 0, 10); x.fillText('agents', 0, 46);
-  const cw = w / 56; for (let i = 0; i < heat.length; i++) { const c = i % 56, r = Math.floor(i / 56), v = (heat[i] + T * 0.15 + c * 0.01) % 1; x.fillStyle = ['#2a1d5c', '#5b2bd9', '#ff3d8b', '#ffe14d', '#3a6df0'][Math.floor(v * 5)]; x.fillRect(c * cw, 76 + r * 7, cw - 0.6, 6); }
+  const cw = w / 56; for (let i = 0; i < heat.length; i++) { const c = i % 56, r = Math.floor(i / 56), v = (heat[i] + T * 0.15 + c * 0.01) % 1; x.fillStyle = ['#121a3a', '#2e2a86', '#8c5cff', '#4fa8ff', '#7fe3ff'][Math.floor(v * 5)]; x.fillRect(c * cw, 76 + r * 7, cw - 0.6, 6); }
   $('dps').textContent = `${380 + Math.round(Math.sin(T) * 20)} dec/s`;
   [x, w, h] = panelSize($('c2')); x.clearRect(0, 0, w, h);
   lanes.forEach((ln, i) => {
@@ -279,31 +341,31 @@ function panels() {
     x.globalAlpha = 1; x.fillStyle = '#c9c6d4'; x.textAlign = 'right'; x.fillText(String(14 + ((i * 7 + Math.floor(T * 2)) % 30)), w, y + 9); x.textAlign = 'left';
   });
   if (Math.random() < 0.15) { thr.shift(); thr.push(0.3 + Math.random() * 0.7); }
-  const bw = (w - 4) / thr.length; thr.forEach((v, i) => { x.fillStyle = i === thr.length - 1 ? '#fff' : '#ff3d8b'; x.fillRect(2 + i * bw, h - 4 - v * 70, bw - 1.2, v * 70); });
+  const bw = (w - 4) / thr.length; thr.forEach((v, i) => { x.fillStyle = i === thr.length - 1 ? '#fff' : '#8c5cff'; x.fillRect(2 + i * bw, h - 4 - v * 70, bw - 1.2, v * 70); });
   x.fillStyle = '#fff'; x.font = `700 16px ${FONT}`; x.textAlign = 'right'; x.fillText((40 + Math.sin(T * 0.7) * 8).toFixed(1), w, 132); x.textAlign = 'left'; x.font = `10px ${FONT}`; x.fillStyle = '#8a8796'; x.fillText('throughput', 0, 132);
   [x, w, h] = panelSize($('c3')); x.clearRect(0, 0, w, h);
   const cx = w / 2, cy = h / 2, R = Math.min(h * 0.44, w * 0.3);
   x.strokeStyle = 'rgba(155,123,255,0.4)'; x.beginPath(); x.arc(cx, cy, R, 0, 6.283); x.stroke();
-  for (let i = 0; i < 90; i++) { const yy = 1 - (i / 89) * 2, rr = Math.sqrt(1 - yy * yy), th = i * 2.4 + T * 0.4, z = Math.sin(th) * rr; x.fillStyle = i % 7 === 0 ? '#ff3d8b' : `rgba(220,215,255,${0.35 + z * 0.5})`; x.fillRect(cx + Math.cos(th) * rr * R, cy + yy * R, 1.8, 1.8); }
+  for (let i = 0; i < 90; i++) { const yy = 1 - (i / 89) * 2, rr = Math.sqrt(1 - yy * yy), th = i * 2.4 + T * 0.4, z = Math.sin(th) * rr; x.fillStyle = i % 7 === 0 ? '#4fa8ff' : `rgba(220,215,255,${0.35 + z * 0.5})`; x.fillRect(cx + Math.cos(th) * rr * R, cy + yy * R, 1.8, 1.8); }
   const gr = x.createRadialGradient(cx, cy, 0, cx, cy, R); gr.addColorStop(0, 'rgba(155,123,255,0.45)'); gr.addColorStop(1, 'rgba(155,123,255,0)'); x.fillStyle = gr; x.fillRect(cx - R, cy - R, 2 * R, 2 * R);
   x.fillStyle = '#8a8796'; x.font = `10px ${FONT}`; x.fillText('conf', 2, 12); x.fillText('step', 2, 52); x.textAlign = 'right'; x.fillText('agents', w - 2, 12); x.fillText('ships', w - 2, 52);
   x.fillStyle = '#fff'; x.font = `700 13px ${FONT}`; x.fillText('15', w - 2, 28); x.fillText('3', w - 2, 68); x.textAlign = 'left'; x.fillText(gateHold ? '0.71' : '0.94', 2, 28); x.fillText(`${phase + 1}/6`, 2, 68);
-  x.fillStyle = '#3ff0c8'; x.font = `10px ${FONT}`; x.textAlign = 'center'; x.fillText(['READING STATE..', 'ROUTING..', 'AGENTS BUILDING..', 'GATE HOLDING..', 'AWAITING PRAT..', 'RELEASING..'][phase], cx, h - 2); x.textAlign = 'left';
+  x.fillStyle = '#4fa8ff'; x.font = `10px ${FONT}`; x.textAlign = 'center'; x.fillText(['READING STATE..', 'ROUTING..', 'AGENTS BUILDING..', 'GATE HOLDING..', 'AWAITING PRAT..', 'RELEASING..'][phase], cx, h - 2); x.textAlign = 'left';
   const n = Math.floor(Math.min(1, pt / (PHASE_T * 0.8)) * CODE.length);
   $('code').innerHTML = hl(CODE.slice(0, n)) + '<span class="cur"></span>';
   [x, w, h] = panelSize($('c4')); x.clearRect(0, 0, w, h);
   const gx = w / 2, gy = 26, s = Math.min(w / 18, 9);
   const iso = (i, j, k) => [gx + (i - j) * s, gy + (i + j) * s * 0.5 - k * s * 0.9];
-  for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) { const [a, b] = iso(i, j, 0), [c, d] = iso(i + 1, j, 0), [e, f] = iso(i + 1, j + 1, 0), [m, o] = iso(i, j + 1, 0); x.fillStyle = (i + j) % 2 ? '#c6f135' : '#b2dc2c'; x.beginPath(); x.moveTo(a, b); x.lineTo(c, d); x.lineTo(e, f); x.lineTo(m, o); x.fill(); }
-  const cubes = [[5, 1, '#e3b45e'], [6, 1, '#e3b45e'], [5, 0, '#e3b45e']].concat(gateHold ? [[2, 4, '#ff4d5e'], [3, 4, '#ff4d5e'], [2, 5, '#ff4d5e']] : []);
+  for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) { const [a, b] = iso(i, j, 0), [c, d] = iso(i + 1, j, 0), [e, f] = iso(i + 1, j + 1, 0), [m, o] = iso(i, j + 1, 0); x.fillStyle = (i + j) % 2 ? '#2f4fd6' : '#2843b8'; x.beginPath(); x.moveTo(a, b); x.lineTo(c, d); x.lineTo(e, f); x.lineTo(m, o); x.fill(); }
+  const cubes = [[5, 1, '#f2c14e'], [6, 1, '#f2c14e'], [5, 0, '#f2c14e']].concat(gateHold ? [[2, 4, '#ff3d6e'], [3, 4, '#ff3d6e'], [2, 5, '#ff3d6e']] : []);
   cubes.forEach(([i, j, col]) => { const [a, b] = iso(i, j, 1), [c, d] = iso(i + 1, j, 1), [e, f] = iso(i + 1, j + 1, 1), [m, o] = iso(i, j + 1, 1); x.fillStyle = col; x.beginPath(); x.moveTo(a, b); x.lineTo(c, d); x.lineTo(e, f); x.lineTo(m, o); x.fill(); x.fillStyle = 'rgba(0,0,0,0.3)'; x.beginPath(); x.moveTo(m, o); x.lineTo(e, f); x.lineTo(e, f + s * 0.9); x.lineTo(m, o + s * 0.9); x.fill(); });
-  x.fillStyle = gateHold ? '#ff4d5e' : '#c6f135'; x.font = `700 22px ${FONT}`; x.fillText(gateHold ? '0.71' : '0.94', 2, h - 6); x.font = `10px ${FONT}`; x.fillStyle = '#8a8796'; x.fillText('confidence', 2, h - 30);
-  $('gkv').innerHTML = `<span>passed</span><b>${gateHold ? 3 : 6}</b><span>held</span><b style="color:${gateHold ? '#ff4d5e' : '#fff'}">${gateHold ? 3 : 0}</b><span>needs prat</span><b>1</b>`;
+  x.fillStyle = gateHold ? '#ff3d6e' : '#7fe3ff'; x.font = `700 22px ${FONT}`; x.fillText(gateHold ? '0.71' : '0.94', 2, h - 6); x.font = `10px ${FONT}`; x.fillStyle = '#8a8796'; x.fillText('confidence', 2, h - 30);
+  $('gkv').innerHTML = `<span>passed</span><b>${gateHold ? 3 : 6}</b><span>held</span><b style="color:${gateHold ? '#ff3d6e' : '#fff'}">${gateHold ? 3 : 0}</b><span>needs prat</span><b>1</b>`;
 }
 
 /* ---------------- status bar ---------------- */
 function bar() {
-  $('bar').innerHTML = `<span>IGRIS · FACTORY <b>v1</b></span><span class="hide-s">blocks <b>20</b></span><span>links <b>${L.length}</b></span><span>agents <b>15</b></span><span>decisions <b class="p">${decisions.toLocaleString()}</b></span><span class="hide-s">cost <b class="y">$${cost.toFixed(3)}</b></span><span>tick <b>${String(tick).padStart(4, '0')}</b></span><span class="sim">SIM</span><span class="right">igris · prat.exe</span>`;
+  $('bar').innerHTML = `<span>IGRIS · SHADOW ARMY <b>v3</b></span><span class="hide-s">blocks <b>20</b></span><span>links <b>${L.length}</b></span><span>shadows <b>15</b></span><span>working <b class="p">${B.flatMap(b => b.agents).filter(id => stOf(id) === 'doing').length}</b></span><span>decisions <b class="p">${decisions.toLocaleString()}</b></span><span class="hide-s">cost <b class="y">$${cost.toFixed(3)}</b></span><span>tick <b>${String(tick).padStart(4, '0')}</b></span>${live ? '<span class="live">LIVE</span>' : ''}<span class="sim" title="Routing motion and counters are animation">SIM</span><span class="right sys">SYSTEM · ARISE</span>`;
 }
 
 /* ---------------- interaction ---------------- */
@@ -311,17 +373,30 @@ function inQuad(px, py, q) { let ins = false; for (let i = 0, j = 3; i < 4; j = 
 function hitBlock(e) { const r = cv.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top; for (let i = quads.length - 1; i >= 0; i--) if (inQuad(px, py, quads[i][1])) return quads[i][0]; return null; }
 cv.addEventListener('pointermove', e => { const b = hitBlock(e), tip = $('tip'); if (!b) { tip.hidden = true; cv.style.cursor = ''; return; } cv.style.cursor = 'pointer'; tip.innerHTML = `<b>${esc(b.name)}</b><span>${esc(b.info)}</span>`; tip.hidden = false; tip.style.left = Math.min(innerWidth - tip.offsetWidth - 8, e.clientX + 14) + 'px'; tip.style.top = Math.min(innerHeight - tip.offsetHeight - 8, e.clientY + 14) + 'px'; });
 cv.addEventListener('pointerleave', () => { $('tip').hidden = true; });
-cv.addEventListener('click', e => {
-  const b = hitBlock(e); if (!b) return; const used = PH.filter(p => p.from.includes(b.id) || p.to.includes(b.id)).map(p => p.n);
-  $('card').style.setProperty('--c', b.color);
-  $('card').innerHTML = `<button class="x" aria-label="Close">×</button><h4>${esc(b.name)}</h4><p>${esc(b.info)}</p><div class="lbl">Fields</div><p>${b.rows.map(esc).join(' · ')}</p><div class="lbl">Lights up in</div><ul>${used.map(u => `<li>${esc(u)}</li>`).join('') || '<li>—</li>'}</ul>`;
-  $('overlay').hidden = false; $('card').querySelector('.x').onclick = () => { $('overlay').hidden = true; };
-  if (!reduce) $('card').animate([{ transform: 'scale(.7) rotateY(-25deg)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.2,.8,.2,1)' });
-});
-$('overlay').addEventListener('click', e => { if (e.target.id === 'overlay') $('overlay').hidden = true; });
+function ago(iso) { if (!iso) return 'no reports yet'; const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000); return s < 60 ? 'just now' : s < 3600 ? Math.round(s / 60) + 'm ago' : s < 86400 ? Math.round(s / 3600) + 'h ago' : Math.round(s / 86400) + 'd ago'; }
+function clock(iso) { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
+function fillWin() {
+  const b = focus; if (!b) return;
+  const used = PH.filter(p => p.from.includes(b.id) || p.to.includes(b.id)).map(p => p.n.replace(/^\d+ /, ''));
+  $('winKind').textContent = b.agents.length ? `System · ${b.agents.length} shadow${b.agents.length > 1 ? 's' : ''}` : 'System · block';
+  $('winName').textContent = b.name;
+  const parts = [`<p class="info">${esc(b.info)}</p>`];
+  if (!b.agents.length) parts.push(`<p class="info">Fields: ${b.rows.map(esc).join(' · ')}</p><p class="info">Lights up in: ${used.map(esc).join(' · ') || '—'}</p>`);
+  b.agents.forEach(id => {
+    const d = docs[id] || {}, st = stOf(id), steps = Array.isArray(d.steps) ? d.steps.slice().reverse() : [];
+    parts.push(`<section class="agent"><div class="hd"><b>${esc(AGNAME[id] || id)}</b><span class="st st-${st}">${st}</span><span class="ago">${esc(ago(d.updatedAt))}</span></div>
+      <div class="task">${esc(d.task || 'Idle. Waiting for orders.')}</div>
+      ${steps.length ? `<ol>${steps.map(s => `<li><time>${esc(clock(s.at))}</time><div><div class="w">${esc(s.text || '')}</div>${s.why ? `<div class="y">${esc(s.why)}</div>` : ''}</div></li>`).join('')}</ol>` : `<div class="none">No steps reported yet.</div>`}</section>`);
+  });
+  $('winBody').innerHTML = parts.join('');
+}
+function openBlock(b) { focus = b; focusLast = b; fillWin(); $('win').hidden = false; $('winClose').focus(); }
+function closeBlock() { focus = null; $('win').hidden = true; }
+cv.addEventListener('click', e => { const b = hitBlock(e); if (b) openBlock(b); else if (focus) closeBlock(); });
+$('winClose').onclick = closeBlock;
 $('pause').onclick = () => { paused = !paused; $('pause').textContent = paused ? 'play' : 'pause'; };
 $('fs').onclick = () => { const on = !document.body.classList.contains('fs'); document.body.classList.toggle('fs', on); $('fs').textContent = on ? '✕ exit' : '⛶ full'; if (on && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {}); };
-addEventListener('keydown', e => { if (e.key === 'Escape') { $('overlay').hidden = true; if (document.body.classList.contains('fs')) $('fs').click(); } if (e.key === 'ArrowRight') { phase = (phase + 1) % PH.length; pt = 0; setPhase(); } });
+addEventListener('keydown', e => { if (e.key === 'Escape') { if (focus) closeBlock(); if (document.body.classList.contains('fs')) $('fs').click(); } if (e.key === 'ArrowRight') { phase = (phase + 1) % PH.length; pt = 0; setPhase(); } });
 function setPhase() { const ph = PH[phase]; $('phase').style.setProperty('--c', ph.c); $('phase').innerHTML = `<b>${ph.n}</b><span>${esc(ph.sub)}</span>`; }
 
 /* ---------------- loop ---------------- */
@@ -329,11 +404,24 @@ let last = null, lastSlow = 0;
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = last === null ? 0 : Math.min(0.1, (now - last) / 1000); last = now;
+  fk += ((focus ? 1 : 0) - fk) * Math.min(1, dt * 3.2); if (!focus && fk < 0.002) focusLast = null;
   if (!paused) { T += dt; pt += dt; if (pt > PHASE_T) { pt = 0; phase = (phase + 1) % PH.length; setPhase(); } decisions += Math.round(dt * 380); cost += dt * 0.0042; }
   camera(); drawGraph();
   if (now - lastSlow > 66) { lastSlow = now; tick++; panels(); bar(); }
   if (Math.floor(T / 1.3) >= traceN) pushTrace();
 }
 setPhase(); pushTrace(); requestAnimationFrame(frame);
+// Live board: the factory's agents report here; every open view updates on the next snapshot.
+(async () => {
+  const db = window.claude && window.claude.use ? await window.claude.use('db') : null;
+  if (!db) return;
+  db.collection('agents').onSnapshot(snap => {
+    const next = {}; snap.docs.forEach(d => { if (d.exists) next[d.id] = d.data(); });
+    docs = next; live = true; traceN = Math.max(traceN, 1); pushTrace(); if (focus) fillWin();
+  }, () => { live = false; });
+})();
+setInterval(() => { if (focus) fillWin(); }, 60000);
 })();
 </script>
+
+</body></html>
