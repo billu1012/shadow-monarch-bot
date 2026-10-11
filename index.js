@@ -4,6 +4,7 @@ import cron from "node-cron";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { mountTrading } from "./trading/routes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -381,6 +382,11 @@ app.post("/api/text", (req, res) => {
     data: dayData
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// TRADING TERMINAL — charts + market data (see trading/README.md)
+// ═══════════════════════════════════════════════════════════════
+mountTrading(app);
 
 // ═══════════════════════════════════════════════════════════════
 // SERVE FRONTEND (built Vite app)

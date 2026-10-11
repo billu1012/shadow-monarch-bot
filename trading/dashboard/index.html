@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monarch Terminal</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚔</text></svg>">
+<style>
+  :root {
+    --bg: #07070d;
+    --panel: #10101c;
+    --line: #23233a;
+    --text: #e6e6f2;
+    --muted: #8a8aa8;
+    --accent: #7b5cff;
+    --up: #26c281;
+    --down: #ef4f6b;
+    --warn: #f5b041;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.4 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+  }
+  .brand { font-weight: 700; letter-spacing: .08em; color: var(--accent); margin-right: 8px; }
+  input, select, button {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font: inherit;
+  }
+  input { width: 120px; text-transform: uppercase; }
+  button { cursor: pointer; }
+  button:hover, button.on { border-color: var(--accent); color: #fff; }
+  button.on { background: #1c1640; }
+  .group { display: flex; gap: 4px; flex-wrap: wrap; }
+  .sep { width: 1px; height: 24px; background: var(--line); margin: 0 4px; }
+  #quote {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 14px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  #q-symbol { font-size: 18px; font-weight: 700; }
+  #q-price { font-size: 22px; font-variant-numeric: tabular-nums; }
+  .up { color: var(--up); }
+  .down { color: var(--down); }
+  .badge {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    border: 1px solid currentColor;
+  }
+  .bias-bullish { color: var(--up); }
+  .bias-bearish { color: var(--down); }
+  .bias-neutral { color: var(--muted); }
+  #q-signals { color: var(--muted); font-size: 13px; }
+  #q-meta { margin-left: auto; color: var(--muted); font-size: 12px; }
+  #banner {
+    display: none;
+    padding: 8px 16px;
+    font-size: 13px;
+    background: #2a2210;
+    color: var(--warn);
+    border-bottom: 1px solid #4a3a14;
+  }
+  #banner.error { background: #2a1016; color: var(--down); border-color: #4a1420; }
+  #chart { flex: 1; min-height: 360px; position: relative; }
+  #watch { padding: 8px 16px; border-top: 1px solid var(--line); background: var(--panel); }
+  #watch button { font-size: 12px; padding: 4px 8px; }
+  @media (max-width: 640px) {
+    header, #quote, #watch { padding-left: 16px; padding-right: 16px; }
+    .sep { display: none; }
+    #q-meta { margin-left: 0; width: 100%; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">⚔ MONARCH TERMINAL</span>
+  <form id="search" class="group">
+    <input id="symbol" value="AAPL" aria-label="Symbol" autocomplete="off" spellcheck="false">
+    <select id="market" aria-label="Market">
+      <option value="stock">Stock</option>
+      <option value="crypto">Crypto</option>
+    </select>
+    <button type="submit">Load</button>
+  </form>
+  <span class="sep"></span>
+  <div class="group" id="intervals"></div>
+  <span class="sep"></span>
+  <div class="group" id="studies"></div>
+</header>
+
+<div id="banner"></div>
+
+<div id="quote">
+  <span id="q-symbol">—</span>
+  <span id="q-price">—</span>
+  <span id="q-change"></span>
+  <span id="q-bias" class="badge bias-neutral">—</span>
+  <span id="q-signals"></span>
+  <span id="q-meta"></span>
+</div>
+
+<div id="chart"></div>
+
+<div id="watch" class="group"></div>
+
+<script type="module">
+import {
+  createChart, CandlestickSeries, LineSeries, HistogramSeries, CrosshairMode,
+} from "./vendor/lightweight-charts.js";
+import { sma, ema, rsi, macd, vwap, summarize } from "./indicators.js";
+
+const INTERVALS = [["5min", "5m"], ["15min", "15m"], ["60min", "1H"], ["daily", "1D"], ["weekly", "1W"]];
+const STUDIES = {
+  sma20: { label: "SMA 20", color: "#f5b041" },
+  sma50: { label: "SMA 50", color: "#5dade2" },
+  ema9: { label: "EMA 9", color: "#e056fd" },
+  vwap: { label: "VWAP", color: "#a3e635" },
+  rsi: { label: "RSI" },
+  macd: { label: "MACD" },
+};
+const DEFAULT_WATCH = ["AAPL", "NVDA", "TSLA", "SPY", "BTC/USD", "ETH/USD", "SOL/USD"];
+const REFRESH_MS = 60_000;
+
+// Per-browser preferences only; everything still works if storage is blocked.
+const store = {
+  get(k, fallback) {
+    try { return JSON.parse(localStorage.getItem(`mt:${k}`)) ?? fallback; } catch { return fallback; }
+  },
+  set(k, v) {
+    try { localStorage.setItem(`mt:${k}`, JSON.stringify(v)); } catch {}
+  },
+};
+
+const state = {
+  symbol: store.get("symbol", "AAPL"),
+  market: store.get("market", "stock"),
+  interval: store.get("interval", "daily"),
+  studies: store.get("studies", { sma20: true, sma50: true, ema9: false, vwap: false, rsi: true, macd: true }),
+  watch: store.get("watch", DEFAULT_WATCH),
+  data: null,
+};
+
+const $ = id => document.getElementById(id);
+let chart = null;
+let timer = null;
+
+function renderControls() {
+  $("symbol").value = state.symbol;
+  $("market").value = state.market;
+
+  $("intervals").replaceChildren(...INTERVALS.map(([value, label]) => {
+    const b = document.createElement("button");
+    b.textContent = label;
+    b.className = state.interval === value ? "on" : "";
+    b.onclick = () => { state.interval = value; store.set("interval", value); renderControls(); load(); };
+    return b;
+  }));
+
+  $("studies").replaceChildren(...Object.entries(STUDIES).map(([key, s]) => {
+    const b = document.createElement("button");
+    b.textContent = s.label;
+    b.className = state.studies[key] ? "on" : "";
+    b.onclick = () => {
+      state.studies[key] = !state.studies[key];
+      store.set("studies", state.studies);
+      renderControls();
+      drawChart();
+    };
+    return b;
+  }));
+
+  const add = document.createElement("button");
+  add.textContent = "+ Watch";
+  add.title = "Add current symbol to watchlist";
+  add.onclick = () => {
+    const sym = currentDisplaySymbol();
+    if (!state.watch.includes(sym)) { state.watch.push(sym); store.set("watch", state.watch); renderControls(); }
+  };
+  $("watch").replaceChildren(...state.watch.map(sym => {
+    const b = document.createElement("button");
+    b.textContent = sym;
+    b.className = sym === currentDisplaySymbol() ? "on" : "";
+    b.onclick = () => selectSymbol(sym);
+    b.oncontextmenu = e => {
+      e.preventDefault();
+      state.watch = state.watch.filter(s => s !== sym);
+      store.set("watch", state.watch);
+      renderControls();
+    };
+    return b;
+  }), add);
+}
+
+function currentDisplaySymbol() {
+  if (state.symbol.includes("/")) return state.symbol;
+  return state.market === "crypto" ? `${state.symbol}/USD` : state.symbol;
+}
+
+function selectSymbol(sym) {
+  state.symbol = sym;
+  state.market = sym.includes("/") ? "crypto" : "stock";
+  store.set("symbol", state.symbol);
+  store.set("market", state.market);
+  renderControls();
+  load();
+}
+
+function banner(text, kind = "warn") {
+  const el = $("banner");
+  el.style.display = text ? "block" : "none";
+  el.className = kind === "error" ? "error" : "";
+  el.textContent = text || "";
+}
+
+async function load() {
+  clearTimeout(timer);
+  const qs = new URLSearchParams({ symbol: state.symbol, market: state.market, interval: state.interval });
+  try {
+    const res = await fetch(`/api/market/candles?${qs}`);
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+    if (!json.candles?.length) throw new Error("No data returned for this symbol/interval");
+    state.data = json;
+    banner(json.demo
+      ? "DEMO DATA — no API key configured. Set TWELVE_DATA_API_KEY or ALPHA_VANTAGE_API_KEY on the server for real prices."
+      : "");
+    renderQuote();
+    drawChart();
+  } catch (err) {
+    banner(`Couldn't load ${currentDisplaySymbol()}: ${err.message}`, "error");
+  }
+  timer = setTimeout(load, REFRESH_MS);
+}
+
+function fmt(n) {
+  if (n == null || Number.isNaN(n)) return "—";
+  const d = Math.abs(n) >= 1000 ? 2 : Math.abs(n) >= 1 ? 2 : 6;
+  return n.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+
+function renderQuote() {
+  const { candles, symbol, provider, cached, interval } = state.data;
+  const last = candles[candles.length - 1];
+  const prev = candles[candles.length - 2] ?? last;
+  const chg = last.close - prev.close;
+  const pct = prev.close ? (chg / prev.close) * 100 : 0;
+
+  $("q-symbol").textContent = symbol;
+  $("q-price").textContent = fmt(last.close);
+  const c = $("q-change");
+  c.textContent = `${chg >= 0 ? "+" : ""}${fmt(chg)} (${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%)`;
+  c.className = chg >= 0 ? "up" : "down";
+
+  const s = summarize(candles);
+  const bias = $("q-bias");
+  if (s.error) {
+    bias.textContent = "n/a";
+    bias.className = "badge bias-neutral";
+    $("q-signals").textContent = s.error;
+  } else {
+    bias.textContent = s.bias;
+    bias.className = `badge bias-${s.bias}`;
+    $("q-signals").textContent = `RSI ${s.rsi14.toFixed(1)} · ${s.signals.join(" · ")}`;
+  }
+  const when = new Date(last.time * 1000).toISOString().replace("T", " ").slice(0, 16);
+  $("q-meta").textContent = `${interval} · last bar ${when} UTC · ${provider}${cached ? " (cached)" : ""}`;
+}
+
+function drawChart() {
+  if (!state.data) return;
+  const { candles, interval } = state.data;
+  if (chart) chart.remove();
+
+  chart = createChart($("chart"), {
+    autoSize: true,
+    layout: { background: { color: "#07070d" }, textColor: "#8a8aa8", panes: { separatorColor: "#23233a" } },
+    grid: { vertLines: { color: "#14142a" }, horzLines: { color: "#14142a" } },
+    crosshair: { mode: CrosshairMode.Normal },
+    rightPriceScale: { borderColor: "#23233a" },
+    timeScale: { borderColor: "#23233a", timeVisible: interval.endsWith("min"), secondsVisible: false },
+  });
+
+  const price = chart.addSeries(CandlestickSeries, {
+    upColor: "#26c281", downColor: "#ef4f6b", borderVisible: false,
+    wickUpColor: "#26c281", wickDownColor: "#ef4f6b",
+  });
+  price.setData(candles);
+  // Leave the bottom fifth of the price pane for volume.
+  price.priceScale().applyOptions({ scaleMargins: { top: 0.08, bottom: 0.22 } });
+
+  const vol = chart.addSeries(HistogramSeries, { priceFormat: { type: "volume" }, priceScaleId: "vol" });
+  vol.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
+  vol.setData(candles.map(c => ({
+    time: c.time,
+    value: c.volume,
+    color: c.close >= c.open ? "rgba(38,194,129,.35)" : "rgba(239,79,107,.35)",
+  })));
+
+  const overlay = (key, data) => {
+    if (!state.studies[key]) return;
+    chart.addSeries(LineSeries, {
+      color: STUDIES[key].color, lineWidth: 2, priceLineVisible: false, lastValueVisible: false,
+    }).setData(data);
+  };
+  overlay("sma20", sma(candles, 20));
+  overlay("sma50", sma(candles, 50));
+  overlay("ema9", ema(candles, 9));
+  overlay("vwap", vwap(candles));
+
+  let pane = 1;
+  if (state.studies.rsi) {
+    const r = chart.addSeries(LineSeries, { color: "#7b5cff", lineWidth: 2, priceLineVisible: false }, pane++);
+    r.setData(rsi(candles, 14));
+    r.createPriceLine({ price: 70, color: "#ef4f6b", lineStyle: 2, axisLabelVisible: false });
+    r.createPriceLine({ price: 30, color: "#26c281", lineStyle: 2, axisLabelVisible: false });
+  }
+  if (state.studies.macd) {
+    const m = macd(candles);
+    const p = pane++;
+    chart.addSeries(HistogramSeries, { priceLineVisible: false, lastValueVisible: false }, p)
+      .setData(m.map(x => ({
+        time: x.time, value: x.histogram, color: x.histogram >= 0 ? "rgba(38,194,129,.6)" : "rgba(239,79,107,.6)",
+      })));
+    chart.addSeries(LineSeries, { color: "#5dade2", lineWidth: 2, priceLineVisible: false }, p)
+      .setData(m.map(x => ({ time: x.time, value: x.macd })));
+    chart.addSeries(LineSeries, { color: "#f5b041", lineWidth: 2, priceLineVisible: false }, p)
+      .setData(m.map(x => ({ time: x.time, value: x.signal })));
+  }
+  // Price pane gets ~3x the height of each indicator pane.
+  chart.panes().forEach((p, i) => p.setStretchFactor(i === 0 ? 3 : 1));
+
+  chart.timeScale().fitContent();
+}
+
+$("search").onsubmit = e => {
+  e.preventDefault();
+  const sym = $("symbol").value.trim().toUpperCase();
+  if (!sym) return;
+  state.symbol = sym;
+  state.market = sym.includes("/") ? "crypto" : $("market").value;
+  store.set("symbol", state.symbol);
+  store.set("market", state.market);
+  renderControls();
+  load();
+};
+
+renderControls();
+load();
+</script>
+</body>
+</html>
