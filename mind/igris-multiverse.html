@@ -103,7 +103,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     <div class="pnl"><h3 style="border-color:var(--teal)">Igris core <small>factory v1</small></h3><canvas id="c3" height="110"></canvas><div class="code" id="code"></div></div>
     <div class="pnl"><h3 style="border-color:var(--lime)">Gate matrix <small>0.85 gate</small></h3><canvas id="c4" height="130"></canvas><div class="kv" id="gkv"></div></div>
   </section>
-  <footer class="foot"><span><b>prat</b> · CEO · Agent Factory</span><span>Agent rows and the trace are live from the factory board; routing motion is animation. Reasons are each agent's own notes.</span><span>IGRIS SHADOW MULTIVERSE · v3</span></footer>
+  <footer class="foot"><span><b>prat</b> · CEO · Agent Factory</span><span>Live board off: agent rows show idle and the trace replays the Oct 11 run. All motion is animation.</span><span>IGRIS SHADOW MULTIVERSE · v3</span></footer>
 </div>
 <section class="win" id="win" role="dialog" aria-labelledby="winName" hidden><header><div style="min-width:0"><small id="winKind">System</small><h4 id="winName">Block</h4></div><button class="x" id="winClose" type="button" aria-label="Close">×</button></header><div class="body" id="winBody"></div></section>
 <div class="tip" id="tip" hidden></div>
@@ -411,15 +411,6 @@ function frame(now) {
   if (Math.floor(T / 1.3) >= traceN) pushTrace();
 }
 setPhase(); pushTrace(); requestAnimationFrame(frame);
-// Live board: the factory's agents report here; every open view updates on the next snapshot.
-(async () => {
-  const db = window.claude && window.claude.use ? await window.claude.use('db') : null;
-  if (!db) return;
-  db.collection('agents').onSnapshot(snap => {
-    const next = {}; snap.docs.forEach(d => { if (d.exists) next[d.id] = d.data(); });
-    docs = next; live = true; traceN = Math.max(traceN, 1); pushTrace(); if (focus) fillWin();
-  }, () => { live = false; });
-})();
 setInterval(() => { if (focus) fillWin(); }, 60000);
 })();
 </script>
